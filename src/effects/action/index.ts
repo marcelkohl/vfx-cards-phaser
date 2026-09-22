@@ -70,6 +70,13 @@ export type {
 } from './converging-frame/convergingFrameOptions'
 export { CONVERGING_FRAME_DEFAULTS } from './converging-frame/convergingFrameOptions'
 
+export { ExpandingFrameEffect } from './expanding-frame/ExpandingFrameEffect'
+export type {
+  ExpandingFrameOptions,
+  ExpandingFramePosition,
+} from './expanding-frame/expandingFrameOptions'
+export { EXPANDING_FRAME_DEFAULTS } from './expanding-frame/expandingFrameOptions'
+
 export { StarFlareEffect } from './star-flare/StarFlareEffect'
 export type {
   StarFlareLayerPosition,

@@ -30,7 +30,9 @@ import { EdgeGlowEffect, ShineSweepEffect } from 'phaser-vfx-effects'
 | Rising Star | action | [action/rising-star/README.md](./action/rising-star/README.md) |
 | Soft Glow Pulse | action | [action/soft-glow-pulse/README.md](./action/soft-glow-pulse/README.md) |
 | Converging Frame | action | [action/converging-frame/README.md](./action/converging-frame/README.md) |
+| Expanding Frame | action | [action/expanding-frame/README.md](./action/expanding-frame/README.md) |
 | Star Flare | action | [action/star-flare/README.md](./action/star-flare/README.md) |
+| Radial Glow | action | [action/radial-glow/README.md](./action/radial-glow/README.md) |
 | Shine Sweep | action | [action/shine-sweep/README.md](./action/shine-sweep/README.md) |
 
 Orchestration lives in [`../transitions/`](../transitions/). Contracts live in [`../core/`](../core/).

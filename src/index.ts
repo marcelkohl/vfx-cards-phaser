@@ -67,6 +67,8 @@ export {
   SOFT_GLOW_PULSE_DEFAULTS,
   ConvergingFrameEffect,
   CONVERGING_FRAME_DEFAULTS,
+  ExpandingFrameEffect,
+  EXPANDING_FRAME_DEFAULTS,
   StarFlareEffect,
   STAR_FLARE_DEFAULTS,
   RadialGlowEffect,
@@ -99,6 +101,8 @@ export type {
   SoftGlowPulsePosition,
   ConvergingFrameOptions,
   ConvergingFramePosition,
+  ExpandingFrameOptions,
+  ExpandingFramePosition,
   StarFlareOptions,
   StarFlareLayerPosition,
   StarFlareScaleMode,
@@ -133,6 +137,7 @@ import {
   RisingStarEffect,
   SoftGlowPulseEffect,
   ConvergingFrameEffect,
+  ExpandingFrameEffect,
   StarFlareEffect,
   RadialGlowEffect,
 } from './effects/action/index'
@@ -147,6 +152,7 @@ import type {
   RisingStarOptions,
   SoftGlowPulseOptions,
   ConvergingFrameOptions,
+  ExpandingFrameOptions,
   StarFlareOptions,
   RadialGlowOptions,
 } from './effects/action/index'
@@ -304,6 +310,18 @@ export function createDefaultEffectRegistry(): EffectRegistry {
     create: (options?: EffectCreateOptions) =>
       new ConvergingFrameEffect(
         options as ConvergingFrameOptions | undefined,
+      ),
+  })
+
+  registry.register({
+    id: 'expanding-frame',
+    name: 'Expanding Frame',
+    description:
+      'Moldura luminosa que expande sob demanda (Action Effect: run / onFinish).',
+    kind: 'action',
+    create: (options?: EffectCreateOptions) =>
+      new ExpandingFrameEffect(
+        options as ExpandingFrameOptions | undefined,
       ),
   })
 

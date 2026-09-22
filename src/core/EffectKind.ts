@@ -27,6 +27,7 @@ export const EFFECT_IDS = {
   risingStar: 'rising-star',
   softGlowPulse: 'soft-glow-pulse',
   convergingFrame: 'converging-frame',
+  expandingFrame: 'expanding-frame',
   starFlare: 'star-flare',
   radialGlow: 'radial-glow',
 } as const
