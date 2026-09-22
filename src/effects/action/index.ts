@@ -10,6 +10,7 @@ export { LightBurstEffect } from './light-burst/LightBurstEffect'
 export type {
   LightBurstOptions,
   LightBurstPosition,
+  LightBurstScaleMode,
 } from './light-burst/lightBurstOptions'
 export { LIGHT_BURST_DEFAULTS } from './light-burst/lightBurstOptions'
 
@@ -73,5 +74,6 @@ export { StarFlareEffect } from './star-flare/StarFlareEffect'
 export type {
   StarFlareLayerPosition,
   StarFlareOptions,
+  StarFlareScaleMode,
 } from './star-flare/starFlareOptions'
 export { STAR_FLARE_DEFAULTS } from './star-flare/starFlareOptions'

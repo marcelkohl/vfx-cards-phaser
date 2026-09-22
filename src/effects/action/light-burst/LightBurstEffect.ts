@@ -11,7 +11,11 @@ import {
   type ResolvedLightBurstOptions,
 } from './lightBurstOptions'
 
-export type { LightBurstOptions, LightBurstPosition } from './lightBurstOptions'
+export type {
+  LightBurstOptions,
+  LightBurstPosition,
+  LightBurstScaleMode,
+} from './lightBurstOptions'
 export { LIGHT_BURST_DEFAULTS } from './lightBurstOptions'
 
 export type LightBurstFinishCallback = (effect: LightBurstEffect) => void
@@ -38,6 +42,7 @@ export class LightBurstEffect implements ActionEffect {
   private runSeed = 1
   private elapsedMs = 0
   private alpha = 0
+  private scale = 1
   private running = false
   private finishListeners = new Set<LightBurstFinishCallback>()
 
@@ -77,10 +82,14 @@ export class LightBurstEffect implements ActionEffect {
 
     this.runSeed = (this.runSeed * 1103515245 + 12345) >>> 0
     this.rays = buildLightBurstRays(this.options, this.runSeed)
-    this.running = true
+    // Reset invisible before arming — avoids a stale full-intensity frame.
+    this.running = false
     this.elapsedMs = 0
     this.alpha = 0
+    this.scale = this.options.startScale
     this.drawRays()
+
+    this.running = true
     return this
   }
 
@@ -89,6 +98,7 @@ export class LightBurstEffect implements ActionEffect {
     this.running = false
     this.elapsedMs = 0
     this.alpha = 0
+    this.scale = this.options?.startScale ?? 1
     this.drawRays()
     return this
   }
@@ -118,19 +128,20 @@ export class LightBurstEffect implements ActionEffect {
       return
     }
 
-    this.elapsedMs += delta
+    // Sample before advancing so the first armed frame stays at elapsed=0 (invisible).
     const sample = sampleLightBurstEnvelope(this.elapsedMs, this.options)
+    this.alpha = sample.finished ? 0 : sample.alpha
+    this.scale = sample.scale
+    this.drawRays()
 
     if (sample.finished) {
       this.running = false
-      this.alpha = 0
-      this.drawRays()
+      this.elapsedMs = 0
       this.emitFinish()
       return
     }
 
-    this.alpha = sample.alpha
-    this.drawRays()
+    this.elapsedMs += Math.max(delta, 0)
   }
 
   public disable(): void {
@@ -138,6 +149,7 @@ export class LightBurstEffect implements ActionEffect {
     this.clearVisuals()
     this.elapsedMs = 0
     this.alpha = 0
+    this.scale = 1
     this.rays = []
   }
 
@@ -163,6 +175,7 @@ export class LightBurstEffect implements ActionEffect {
     this.running = false
     this.elapsedMs = 0
     this.alpha = 0
+    this.scale = this.options.startScale
     this.rays = buildLightBurstRays(this.options, this.runSeed)
 
     this.graphics = context.scene.add.graphics()
@@ -192,6 +205,7 @@ export class LightBurstEffect implements ActionEffect {
 
     const { width, height, rayLength, rayWidth, tipFlare, color, originInset } =
       this.options
+    const growth = Math.max(this.scale, 0.05)
     const halfW = width / 2
     const halfH = height / 2
     const innerX = halfW * (1 - originInset)
@@ -205,7 +219,8 @@ export class LightBurstEffect implements ActionEffect {
         edgeDist * (1 - originInset * 0.35),
         Math.hypot(innerX, innerY),
       )
-      const tipDist = edgeDist + rayLength * ray.lengthScale
+      // Scale only the outward extension so rays open from a stable origin.
+      const tipDist = edgeDist + rayLength * ray.lengthScale * growth
 
       const sx = cos * startDist
       const sy = sin * startDist
@@ -214,7 +229,7 @@ export class LightBurstEffect implements ActionEffect {
 
       const perpX = -sin
       const perpY = cos
-      const halfBase = (rayWidth * ray.widthScale) / 2
+      const halfBase = (rayWidth * ray.widthScale * Math.sqrt(growth)) / 2
       const halfTip = halfBase * tipFlare
       const peak = Math.min(globalAlpha * ray.alphaScale, 1)
 

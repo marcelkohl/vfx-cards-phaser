@@ -6,6 +6,9 @@ import {
 
 export type StarFlareLayerPosition = 'back' | 'front'
 
+/** How Star Flare scale evolves relative to opacity. Local to this effect. */
+export type StarFlareScaleMode = 'return' | 'continuous'
+
 export interface StarFlareOptions {
   /** Target frame width in local pixels (used for normalized positioning). */
   width?: number
@@ -29,12 +32,12 @@ export interface StarFlareOptions {
   verticalLength?: number
   /**
    * Soft thickness of the horizontal streak near the center, in pixels.
-   * Default 16.
+   * Default 12.
    */
   horizontalThickness?: number
   /**
    * Soft thickness of the vertical streak near the center, in pixels.
-   * Default 11.
+   * Default 8.
    */
   verticalThickness?: number
   /**
@@ -58,6 +61,27 @@ export interface StarFlareOptions {
   holdDuration?: number
   /** Time to fade from peak to invisible, in milliseconds. Default 400. */
   fadeOutDuration?: number
+  /**
+   * How visual scale evolves relative to opacity.
+   * - `return` (default): startScale → peakScale → endScale with opacity phases
+   * - `continuous`: startScale → endScale over the full lifetime (never reverses)
+   */
+  scaleMode?: StarFlareScaleMode
+  /** Scale at t=0. Default 0.55 (historical subtle grow-in). */
+  startScale?: number
+  /** Scale at opacity peak / hold (`return` mode). Default 1. */
+  peakScale?: number
+  /**
+   * Scale at the end of the animation.
+   * Default 1 (historical: stays full size during fade-out).
+   */
+  endScale?: number
+  /**
+   * Normalized progress (0..1) where opacity reaches its peak (start of hold).
+   * When set, redistributes fade-in/fade-out while preserving hold and total duration.
+   * When omitted, `fadeInDuration` / `holdDuration` / `fadeOutDuration` are used as given.
+   */
+  peakAt?: number
   /**
    * Draw order relative to other children of the target.
    * `front` = over artwork (default). `back` = behind.
@@ -83,6 +107,11 @@ export interface ResolvedStarFlareOptions {
   fadeInDuration: number
   holdDuration: number
   fadeOutDuration: number
+  scaleMode: StarFlareScaleMode
+  startScale: number
+  peakScale: number
+  endScale: number
+  peakAt: number
   position: StarFlareLayerPosition
   blendMode: number
 }
@@ -97,14 +126,19 @@ export const STAR_FLARE_DEFAULTS: ResolvedStarFlareOptions = {
   opacity: 0.95,
   horizontalLength: 400,
   verticalLength: 380,
-  horizontalThickness: 16,
-  verticalThickness: 11,
+  horizontalThickness: 12,
+  verticalThickness: 8,
   glowRadius: 34,
   positionX: 0.5,
   positionY: 0.5,
   fadeInDuration: 50,
   holdDuration: 60,
   fadeOutDuration: 400,
+  scaleMode: 'return',
+  startScale: 0.55,
+  peakScale: 1,
+  endScale: 1,
+  peakAt: 50 / (50 + 60 + 400),
   position: 'front',
   blendMode: BLEND_ADD,
 }
@@ -119,25 +153,25 @@ export function getStarFlareDurationMs(
 }
 
 function smoothstep(t: number): number {
-  const x = clamp(t, 0, 1)
+  const x = clamp01(t)
   return x * x * (3 - 2 * x)
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t
 }
 
 export interface StarFlareSample {
   /** Normalized opacity envelope (0..1) before intensity/opacity. */
   strength: number
-  /**
-   * Ray length growth factor (0..1).
-   * Grows subtly during fade-in; full during hold/fade-out.
-   */
-  rayGrowth: number
+  /** Visual scale for the whole flare (star, halo, both rays). */
+  scale: number
   finished: boolean
 }
 
 /**
- * Samples one flare: fade-in → hold → fade-out.
- * Starts and ends at strength 0 — never jumps to full intensity.
- * `rayGrowth` rises with fade-in so rays subtly extend without exploding.
+ * Samples one flare. Opacity uses fade-in → hold → fade-out.
+ * Scale is independent and follows `scaleMode`.
  */
 export function sampleStarFlareEnvelope(
   elapsedMs: number,
@@ -149,29 +183,85 @@ export function sampleStarFlareEnvelope(
   const total = Math.max(fadeIn + hold + fadeOut, 1)
 
   if (elapsedMs <= 0) {
-    return { strength: 0, rayGrowth: 0.55, finished: false }
+    return { strength: 0, scale: options.startScale, finished: false }
   }
 
   if (elapsedMs >= total) {
-    return { strength: 0, rayGrowth: 1, finished: true }
+    return { strength: 0, scale: options.endScale, finished: true }
   }
 
+  const strength = sampleStarFlareOpacity(elapsedMs, fadeIn, hold, fadeOut)
+  const scale = sampleStarFlareScale(
+    elapsedMs,
+    fadeIn,
+    hold,
+    fadeOut,
+    total,
+    options,
+  )
+  return { strength, scale, finished: false }
+}
+
+function sampleStarFlareOpacity(
+  elapsedMs: number,
+  fadeIn: number,
+  hold: number,
+  fadeOut: number,
+): number {
   if (elapsedMs < fadeIn) {
     if (fadeIn <= 0) {
-      return { strength: 1, rayGrowth: 1, finished: false }
+      return 1
     }
-    const t = smoothstep(elapsedMs / fadeIn)
-    // Subtle growth: start ~55% length → full by end of fade-in.
-    return { strength: t, rayGrowth: 0.55 + 0.45 * t, finished: false }
+    return smoothstep(elapsedMs / fadeIn)
   }
 
   if (elapsedMs < fadeIn + hold) {
-    return { strength: 1, rayGrowth: 1, finished: false }
+    return 1
   }
 
   const outT = fadeOut <= 0 ? 1 : (elapsedMs - fadeIn - hold) / fadeOut
-  const strength = 1 - smoothstep(outT)
-  return { strength, rayGrowth: 1, finished: false }
+  return 1 - smoothstep(outT)
+}
+
+function sampleStarFlareScale(
+  elapsedMs: number,
+  fadeIn: number,
+  hold: number,
+  fadeOut: number,
+  total: number,
+  options: ResolvedStarFlareOptions,
+): number {
+  if (options.scaleMode === 'continuous') {
+    // Full-lifetime expansion — never pauses during hold, never reverses.
+    return lerp(
+      options.startScale,
+      options.endScale,
+      smoothstep(elapsedMs / total),
+    )
+  }
+
+  // return: grow to peak with fade-in, hold, then ease toward endScale
+  if (elapsedMs < fadeIn) {
+    if (fadeIn <= 0) {
+      return options.peakScale
+    }
+    return lerp(
+      options.startScale,
+      options.peakScale,
+      smoothstep(elapsedMs / fadeIn),
+    )
+  }
+
+  if (elapsedMs < fadeIn + hold) {
+    return options.peakScale
+  }
+
+  if (fadeOut <= 0) {
+    return options.endScale
+  }
+
+  const outT = (elapsedMs - fadeIn - hold) / fadeOut
+  return lerp(options.peakScale, options.endScale, smoothstep(outT))
 }
 
 /** Local-space offset from target center for the configured normalized position. */
@@ -192,6 +282,36 @@ export function resolveStarFlareOptions(
   const height = clamp(raw.height ?? STAR_FLARE_DEFAULTS.height, 1, 4096)
   const position: StarFlareLayerPosition =
     raw.position === 'back' ? 'back' : 'front'
+
+  let fadeInDuration = clamp(
+    raw.fadeInDuration ?? STAR_FLARE_DEFAULTS.fadeInDuration,
+    0,
+    8_000,
+  )
+  let holdDuration = clamp(
+    raw.holdDuration ?? STAR_FLARE_DEFAULTS.holdDuration,
+    0,
+    8_000,
+  )
+  let fadeOutDuration = clamp(
+    raw.fadeOutDuration ?? STAR_FLARE_DEFAULTS.fadeOutDuration,
+    0,
+    12_000,
+  )
+
+  let peakAt: number
+  if (raw.peakAt != null && Number.isFinite(raw.peakAt)) {
+    peakAt = clamp01(raw.peakAt)
+    const total = Math.max(fadeInDuration + holdDuration + fadeOutDuration, 1)
+    fadeInDuration = clamp(peakAt * total, 0, Math.max(total - holdDuration, 0))
+    fadeOutDuration = Math.max(total - fadeInDuration - holdDuration, 0)
+  } else {
+    const total = Math.max(fadeInDuration + holdDuration + fadeOutDuration, 1)
+    peakAt = fadeInDuration / total
+  }
+
+  const scaleMode: StarFlareScaleMode =
+    raw.scaleMode === 'continuous' ? 'continuous' : 'return'
 
   return {
     width,
@@ -226,21 +346,18 @@ export function resolveStarFlareOptions(
     ),
     positionX: clamp01(raw.positionX ?? STAR_FLARE_DEFAULTS.positionX),
     positionY: clamp01(raw.positionY ?? STAR_FLARE_DEFAULTS.positionY),
-    fadeInDuration: clamp(
-      raw.fadeInDuration ?? STAR_FLARE_DEFAULTS.fadeInDuration,
-      0,
-      8_000,
+    fadeInDuration,
+    holdDuration,
+    fadeOutDuration,
+    scaleMode,
+    startScale: clamp(
+      raw.startScale ?? STAR_FLARE_DEFAULTS.startScale,
+      0.05,
+      8,
     ),
-    holdDuration: clamp(
-      raw.holdDuration ?? STAR_FLARE_DEFAULTS.holdDuration,
-      0,
-      8_000,
-    ),
-    fadeOutDuration: clamp(
-      raw.fadeOutDuration ?? STAR_FLARE_DEFAULTS.fadeOutDuration,
-      0,
-      12_000,
-    ),
+    peakScale: clamp(raw.peakScale ?? STAR_FLARE_DEFAULTS.peakScale, 0.05, 8),
+    endScale: clamp(raw.endScale ?? STAR_FLARE_DEFAULTS.endScale, 0.05, 8),
+    peakAt,
     position,
     blendMode: Number.isFinite(raw.blendMode)
       ? Math.floor(raw.blendMode as number)

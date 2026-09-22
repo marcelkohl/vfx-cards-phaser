@@ -70,14 +70,18 @@ const flare = new StarFlareEffect({
   opacity: 0.95,
   horizontalLength: 400,
   verticalLength: 380,
-  horizontalThickness: 16,
-  verticalThickness: 11,
+  horizontalThickness: 12,
+  verticalThickness: 8,
   glowRadius: 34,
   positionX: 0.5,
   positionY: 0.5,
   fadeInDuration: 50,
   holdDuration: 60,
   fadeOutDuration: 400,
+  scaleMode: 'return',
+  startScale: 0.55,
+  peakScale: 1,
+  endScale: 1,
   position: 'front',
 })
 
@@ -100,14 +104,19 @@ Registry id: `star-flare`.
 | `opacity` | `0.95` | Peak alpha multiplier |
 | `horizontalLength` | `400` | Tip-to-tip horizontal streak (px) |
 | `verticalLength` | `380` | Tip-to-tip vertical streak (px) |
-| `horizontalThickness` | `16` | Soft mid thickness of H streak (px) |
-| `verticalThickness` | `11` | Soft mid thickness of V streak (px) |
+| `horizontalThickness` | `12` | Soft mid thickness of H streak (px) |
+| `verticalThickness` | `8` | Soft mid thickness of V streak (px) |
 | `glowRadius` | `34` | Central soft halo radius (px); drives core size |
 | `positionX` | `0.5` | Normalized X on the target (0 left → 1 right) |
 | `positionY` | `0.5` | Normalized Y on the target (0 top → 1 bottom) |
 | `fadeInDuration` | `50` | Rise to peak (ms) |
 | `holdDuration` | `60` | Hold at peak (ms) |
 | `fadeOutDuration` | `400` | Soft disappearance (ms) |
+| `scaleMode` | `'return'` | `'return'` or `'continuous'` (see below) |
+| `startScale` | `0.55` | Scale at t = 0 |
+| `peakScale` | `1` | Scale at opacity peak (`return` mode) |
+| `endScale` | `1` | Scale at t = 1 |
+| `peakAt` | derived | Opacity peak as normalized progress `0..1` (optional) |
 | `position` | `'front'` | `'front'` / `'back'` layering |
 
 ### Normalized positioning
@@ -124,7 +133,8 @@ Offsets are computed in local target space:
 ### Ray dimensions
 
 Horizontal and vertical lengths / thicknesses are **independent** (pixels).
-Defaults favor a dominant horizontal flare with a clear vertical component.
+Defaults favor a dominant horizontal flare with sharper, thinner streaks
+(luminous rather than heavy).
 
 ### Timing
 
@@ -138,7 +148,76 @@ Defaults favor a dominant horizontal flare with a clear vertical component.
 
 Sequence: invisible → fast build → bright peak → short hold → longer fade → invisible.
 
-During fade-in, rays grow subtly (~55% → 100% length). Not an expanding explosion.
+Opacity and scale are **independent**. Hold keeps opacity at peak but does
+**not** pause continuous expansion.
+
+### Scale modes
+
+Opacity always follows:
+
+```text
+opacity
+0 ─────────────► PEAK ─────────────► 0
+                  ▲
+                peakAt
+```
+
+#### `return` (default)
+
+```text
+scale
+start ────────────► peak ─────────────► end
+```
+
+Defaults (`startScale: 0.55`, `peakScale: 1`, `endScale: 1`) preserve the
+historical subtle grow-in that stays full-size while fading out.
+
+#### `continuous`
+
+Expansion continues for the complete lifetime. At the opacity peak the flare
+does **not** stop expanding and does **not** reverse — only opacity changes
+direction.
+
+```text
+scale
+start ────────────────────────────────► end
+```
+
+```ts
+new StarFlareEffect({
+  scaleMode: 'continuous',
+  startScale: 0.55,
+  endScale: 1.15,
+  peakAt: 0.4,
+})
+```
+
+```text
+small + invisible
+        ↓
+expanding + appearing
+        ↓
+brightness peak
+        ↓
+STILL expanding + fading
+        ↓
+large + invisible
+```
+
+Star, halo, and both ray axes share one scale (anchored — no travel).
+
+### `peakAt`
+
+Normalized progress (`0` = start, `1` = end) where opacity reaches its peak
+(start of hold).
+
+- When **omitted**: fade timings are used as given (backward compatible).
+- When **set**: fade-in / fade-out are redistributed so the peak lands at
+  `peakAt`, while hold and total lifetime are preserved.
+
+```ts
+{ scaleMode: 'continuous', peakAt: 0.35, startScale: 0.55, endScale: 1.15 }
+```
 
 ## Rendering
 
@@ -161,7 +240,7 @@ Components share color and envelope so they read as one flare.
 | `disable` / `destroy` | Release visuals / listeners |
 
 `run()` while active restarts cleanly. First armed frame samples `elapsed = 0`
-(invisible) — no initial flicker.
+(invisible, `startScale`) — no initial flicker.
 
 ## Layering / target usage
 
@@ -181,7 +260,8 @@ Repetition belongs to a Transition / recipe.
 
 ## Playground
 
-**Action Effects → Star Flare**. Each click runs one flare.
+**Action Effects → Star Flare**. Card 1 preset uses `scaleMode: 'continuous'`
+so post-peak expansion while fading is easy to inspect.
 
 ## Out of scope
 
@@ -190,3 +270,4 @@ Repetition belongs to a Transition / recipe.
 - Upward travel (Rising Star)
 - Repeat / delay inside the effect
 - Camera shake / sound
+- Shared animation helpers with other action effects

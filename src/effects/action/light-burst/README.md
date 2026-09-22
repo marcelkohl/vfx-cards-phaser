@@ -27,6 +27,10 @@ const lightBurst = new LightBurstEffect({
   tipFlare: 3.2,
   position: 'front',
   duration: 420,
+  scaleMode: 'return',
+  startScale: 1,
+  peakScale: 1,
+  endScale: 1,
 })
 
 lightBurst.enable({ scene, target })
@@ -54,13 +58,95 @@ lightBurst.run()
 | `originInset` | `0.18` | Quanto “para dentro” começam os raios |
 | `spreadJitter` | `0.55` | Irregularidade angular |
 | `lengthJitter` | `0.32` | Variação de comprimento |
+| `scaleMode` | `'return'` | `'return'` ou `'continuous'` (ver abaixo) |
+| `startScale` | `1` | Escala em t = 0 |
+| `peakScale` | `1` | Escala no pico de opacidade (`return`) |
+| `endScale` | `1` | Escala em t = 1 |
+| `peakAt` | derivado | Pico de opacidade como progresso `0..1` (opcional) |
 | `position` | `'front'` | `'front'` = por cima do target; `'back'` = atrás |
+
+## Scale modes
+
+Opacidade e expansão dos raios são **independentes** (implementação local deste effect).
+
+Opacidade:
+
+```text
+opacity
+0 ─────────────► PEAK ─────────────► 0
+                  ▲
+                peakAt
+```
+
+### `return` (padrão)
+
+```text
+scale
+start ────────────► peak ─────────────► end
+```
+
+Defaults (`startScale` / `peakScale` / `endScale` = `1`) preservam o visual
+histórico (raios em comprimento cheio; só a opacidade anima).
+
+### `continuous`
+
+Os raios **continuam abrindo** durante toda a vida do efeito. No pico de
+opacidade eles **não** param de expandir e **não** recolhem — só a opacidade
+muda de direção.
+
+```text
+scale
+start ────────────────────────────────► end
+```
+
+```ts
+new LightBurstEffect({
+  scaleMode: 'continuous',
+  startScale: 0.6,
+  endScale: 1.2,
+  peakAt: 0.4,
+  position: 'front',
+  duration: 720,
+})
+```
+
+```text
+small burst
+     ↓
+rays opening + appearing
+     ↓
+brightness peak
+     ↓
+rays KEEP opening + fading
+     ↓
+large burst + invisible
+```
+
+O hold interno (parte do split de `duration`) **não** pausa a expansão contínua.
+
+### `peakAt`
+
+Progresso normalizado (`0` = início, `1` = fim) onde a opacidade atinge o pico
+(início do hold).
+
+- Quando **omitido**: o split padrão de `duration` é usado (compatível).
+- Quando **definido**: fade-in / fade-out são redistribuídos para o pico cair em
+  `peakAt`, preservando hold e duração total.
 
 ## Geometria
 
 Só options — sem `Card`. O retângulo é a origem; os raios **podem** sair além dele.
 
 Cada raio é um **trapézio** (base estreita → ponta aberta/reta), desenhado em segmentos com alpha caindo ao longo do comprimento. `position` controla se o Graphics fica por cima (`add`) ou atrás (`addAt(..., 0)`).
+
+A escala multiplica a extensão além da borda (e suavemente a largura); a origem
+permanece estável.
+
+## Layering
+
+`position: 'front' | 'back'` — mesmo padrão dos outros effects. Use `'front'`
+quando o burst precisa renderizar **na frente** do target (ex.: Card Flare).
+Não existe um efeito separado “Front Light Burst”.
 
 ## Lifecycle
 
@@ -73,6 +159,8 @@ Cada raio é um **trapézio** (base estreita → ponta aberta/reta), desenhado e
 | `disable` / `destroy` | Remove visuals / limpa listeners |
 
 Cada `run()` regenera o jitter dos raios (variação controlada, não um sol rígido).
+O primeiro frame armado fica em `elapsed = 0` (invisível, `startScale`) —
+sem flicker inicial.
 
 ## Transition
 
@@ -91,7 +179,11 @@ transition.run()
 
 No painel, **Light Burst**: 1º clique monta + `run()`; cliques seguintes chamam `run()` de novo.
 
+O preset do Card 1 usa `scaleMode: 'continuous'` para deixar óbvio que, após o
+pico de brilho, os raios seguem expandindo enquanto somem.
+
 ## Limitações
 
 - Raios em Graphics (trapézios segmentados + ADD), sem partículas nem bloom externo.
 - Não inclui Flash, Shine Sweep nem a composição Card Flash Burst.
+- Animação de escala é local a este effect (sem helper compartilhado com Star Flare).

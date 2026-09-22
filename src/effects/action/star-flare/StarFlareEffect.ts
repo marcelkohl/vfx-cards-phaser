@@ -13,6 +13,7 @@ import {
 export type {
   StarFlareLayerPosition,
   StarFlareOptions,
+  StarFlareScaleMode,
 } from './starFlareOptions'
 export { STAR_FLARE_DEFAULTS } from './starFlareOptions'
 
@@ -38,7 +39,7 @@ export class StarFlareEffect implements ActionEffect {
   private graphics: Phaser.GameObjects.Graphics | null = null
   private elapsedMs = 0
   private strength = 0
-  private rayGrowth = 0.55
+  private scale = 0.55
   private running = false
   private finishListeners = new Set<StarFlareFinishCallback>()
 
@@ -80,7 +81,7 @@ export class StarFlareEffect implements ActionEffect {
     this.running = false
     this.elapsedMs = 0
     this.strength = 0
-    this.rayGrowth = 0.55
+    this.scale = this.options.startScale
     this.drawFlare()
 
     this.running = true
@@ -92,7 +93,7 @@ export class StarFlareEffect implements ActionEffect {
     this.running = false
     this.elapsedMs = 0
     this.strength = 0
-    this.rayGrowth = 0.55
+    this.scale = this.options?.startScale ?? 0.55
     this.drawFlare()
     return this
   }
@@ -125,7 +126,7 @@ export class StarFlareEffect implements ActionEffect {
     // Sample before advancing so the first armed frame stays at elapsed=0 (invisible).
     const sample = sampleStarFlareEnvelope(this.elapsedMs, this.options)
     this.strength = sample.finished ? 0 : sample.strength
-    this.rayGrowth = sample.rayGrowth
+    this.scale = sample.scale
     this.drawFlare()
 
     if (sample.finished) {
@@ -143,7 +144,7 @@ export class StarFlareEffect implements ActionEffect {
     this.clearVisuals()
     this.elapsedMs = 0
     this.strength = 0
-    this.rayGrowth = 0.55
+    this.scale = 0.55
   }
 
   /** @deprecated Use `disable`. */
@@ -168,7 +169,7 @@ export class StarFlareEffect implements ActionEffect {
     this.running = false
     this.elapsedMs = 0
     this.strength = 0
-    this.rayGrowth = 0.55
+    this.scale = this.options.startScale
 
     this.graphics = context.scene.add.graphics()
     this.graphics.setName(`effect:${this.id}`)
@@ -203,19 +204,20 @@ export class StarFlareEffect implements ActionEffect {
     }
 
     const { x, y } = starFlareLocalOffset(this.options)
-    const growth = Math.min(Math.max(this.rayGrowth, 0.2), 1)
+    // Cohesive expansion: star, halo, and both ray axes share one scale.
+    const growth = Math.max(this.scale, 0.05)
     const hHalf = (this.options.horizontalLength * growth) / 2
     const vHalf = (this.options.verticalLength * growth) / 2
-    const hThick = this.options.horizontalThickness
-    const vThick = this.options.verticalThickness
-    const glow = this.options.glowRadius
+    const hThick = this.options.horizontalThickness * growth
+    const vThick = this.options.verticalThickness * growth
+    const glow = this.options.glowRadius * growth
     const color = this.options.color
-    const coreSize = glow * 0.62
+    const coreSize = glow * 0.58
 
     // Soft central halo — several rings so edges dissolve.
-    this.fillSoftGlow(x, y, glow * 1.35, color, peak * 0.1)
-    this.fillSoftGlow(x, y, glow, color, peak * 0.18)
-    this.fillSoftGlow(x, y, glow * 0.55, color, peak * 0.28)
+    this.fillSoftGlow(x, y, glow * 1.3, color, peak * 0.09)
+    this.fillSoftGlow(x, y, glow, color, peak * 0.16)
+    this.fillSoftGlow(x, y, glow * 0.5, color, peak * 0.26)
 
     // Vertical luminous streak (softer outer + brighter core).
     if (vHalf > 0.5) {
@@ -225,9 +227,9 @@ export class StarFlareEffect implements ActionEffect {
         0,
         1,
         vHalf,
-        vThick * 1.35,
+        vThick * 1.2,
         color,
-        peak * 0.22,
+        peak * 0.2,
       )
       this.drawAxisRay(
         x,
@@ -235,7 +237,7 @@ export class StarFlareEffect implements ActionEffect {
         0,
         1,
         vHalf * 0.96,
-        vThick * 0.55,
+        vThick * 0.48,
         color,
         peak * 0.55,
       )
@@ -249,9 +251,9 @@ export class StarFlareEffect implements ActionEffect {
         1,
         0,
         hHalf,
-        hThick * 1.4,
+        hThick * 1.22,
         color,
-        peak * 0.28,
+        peak * 0.26,
       )
       this.drawAxisRay(
         x,
@@ -259,16 +261,16 @@ export class StarFlareEffect implements ActionEffect {
         1,
         0,
         hHalf * 0.97,
-        hThick * 0.5,
+        hThick * 0.42,
         color,
-        peak * 0.7,
+        peak * 0.72,
       )
     }
 
     // Bright four-point star core (brightest element).
-    this.fillFourPointStar(x, y, coreSize * 1.2, color, peak * 0.28)
+    this.fillFourPointStar(x, y, coreSize * 1.15, color, peak * 0.26)
     this.fillFourPointStar(x, y, coreSize, color, Math.min(peak * 1.05, 1))
-    this.fillSoftGlow(x, y, coreSize * 0.28, color, Math.min(peak * 1.1, 1))
+    this.fillSoftGlow(x, y, coreSize * 0.26, color, Math.min(peak * 1.1, 1))
   }
 
   /**
@@ -304,8 +306,8 @@ export class StarFlareEffect implements ActionEffect {
       }
 
       // Taper: full thickness at center → thin tip.
-      const w0 = halfThickness * (1 - t0 * 0.88)
-      const w1 = halfThickness * (1 - t1 * 0.88)
+      const w0 = halfThickness * (1 - t0 * 0.9)
+      const w1 = halfThickness * (1 - t1 * 0.9)
 
       // Both directions from center (±).
       for (const sign of [-1, 1] as const) {
@@ -365,8 +367,9 @@ export class StarFlareEffect implements ActionEffect {
       return
     }
 
-    const tip = size * 0.55
-    const waist = size * 0.12
+    // Slightly thinner arms: longer tip, narrower waist.
+    const tip = size * 0.58
+    const waist = size * 0.09
     const n = { x, y: y - tip }
     const e = { x: x + tip, y }
     const s = { x, y: y + tip }

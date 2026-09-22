@@ -83,6 +83,7 @@ export type {
   FragmentBurstSpawnRegion,
   LightBurstOptions,
   LightBurstPosition,
+  LightBurstScaleMode,
   ShineSweepOptions,
   SparkleBurstOptions,
   SparkleBurstPosition,
@@ -98,6 +99,7 @@ export type {
   ConvergingFramePosition,
   StarFlareOptions,
   StarFlareLayerPosition,
+  StarFlareScaleMode,
 } from './effects/action/index'
 
 import { EffectRegistry } from './core/index'
