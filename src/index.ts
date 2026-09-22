@@ -69,6 +69,8 @@ export {
   CONVERGING_FRAME_DEFAULTS,
   StarFlareEffect,
   STAR_FLARE_DEFAULTS,
+  RadialGlowEffect,
+  RADIAL_GLOW_DEFAULTS,
 } from './effects/action/index'
 export type {
   BloomFadeOptions,
@@ -100,6 +102,8 @@ export type {
   StarFlareOptions,
   StarFlareLayerPosition,
   StarFlareScaleMode,
+  RadialGlowOptions,
+  RadialGlowPosition,
 } from './effects/action/index'
 
 import { EffectRegistry } from './core/index'
@@ -130,6 +134,7 @@ import {
   SoftGlowPulseEffect,
   ConvergingFrameEffect,
   StarFlareEffect,
+  RadialGlowEffect,
 } from './effects/action/index'
 import type {
   BloomFadeOptions,
@@ -143,6 +148,7 @@ import type {
   SoftGlowPulseOptions,
   ConvergingFrameOptions,
   StarFlareOptions,
+  RadialGlowOptions,
 } from './effects/action/index'
 
 export function createDefaultEffectRegistry(): EffectRegistry {
@@ -309,6 +315,16 @@ export function createDefaultEffectRegistry(): EffectRegistry {
     kind: 'action',
     create: (options?: EffectCreateOptions) =>
       new StarFlareEffect(options as StarFlareOptions | undefined),
+  })
+
+  registry.register({
+    id: 'radial-glow',
+    name: 'Radial Glow',
+    description:
+      'Halo circular suave sob demanda (Action Effect: run / onFinish).',
+    kind: 'action',
+    create: (options?: EffectCreateOptions) =>
+      new RadialGlowEffect(options as RadialGlowOptions | undefined),
   })
 
   return registry

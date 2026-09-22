@@ -28,6 +28,7 @@ export const EFFECT_IDS = {
   softGlowPulse: 'soft-glow-pulse',
   convergingFrame: 'converging-frame',
   starFlare: 'star-flare',
+  radialGlow: 'radial-glow',
 } as const
 
 export type EffectId =

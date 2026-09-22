@@ -77,3 +77,10 @@ export type {
   StarFlareScaleMode,
 } from './star-flare/starFlareOptions'
 export { STAR_FLARE_DEFAULTS } from './star-flare/starFlareOptions'
+
+export { RadialGlowEffect } from './radial-glow/RadialGlowEffect'
+export type {
+  RadialGlowOptions,
+  RadialGlowPosition,
+} from './radial-glow/radialGlowOptions'
+export { RADIAL_GLOW_DEFAULTS } from './radial-glow/radialGlowOptions'
