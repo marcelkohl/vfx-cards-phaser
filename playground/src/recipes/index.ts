@@ -5,6 +5,16 @@ export {
   CARD_FLASH_BURST_DEFAULTS,
 } from './card-flash-burst/cardFlashBurstOptions'
 
+export { CardFlashTransition } from './card-flash/CardFlashTransition'
+export type { CardFlashOptions } from './card-flash/cardFlashOptions'
+export {
+  CARD_FLASH_DEFAULTS,
+  CARD_FLASH_EXPANDING_FRAME_DEFAULTS,
+  CARD_FLASH_LIGHT_BURST_DEFAULTS,
+  CARD_FLASH_RADIAL_GLOW_DEFAULTS,
+  CARD_FLASH_STREAK_BURST_DEFAULTS,
+} from './card-flash/cardFlashOptions'
+
 export { CardDissolveRevealTransition } from './card-dissolve-reveal/CardDissolveRevealTransition'
 export type {
   CardDissolveRevealOptions,

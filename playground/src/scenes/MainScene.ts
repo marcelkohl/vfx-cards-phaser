@@ -8,6 +8,7 @@ import {
 import {
   CardDissolveRevealTransition,
   CardFlashBurstTransition,
+  CardFlashTransition,
   CardFlareTransition,
   FeatherTransition,
 } from '../recipes'
@@ -17,6 +18,7 @@ import { SelectionIndicator } from '../ui/SelectionIndicator'
 const CARD_GAP = 36
 const SCREEN_PADDING = 32
 const CARD_FLASH_BURST_ID = 'card-flash-burst'
+const CARD_FLASH_ID = 'card-flash'
 const CARD_DISSOLVE_REVEAL_ID = 'card-dissolve-reveal'
 const FEATHER_ID = 'feather'
 const CARD_FLARE_ID = 'card-flare'
@@ -713,6 +715,7 @@ export class MainScene extends Phaser.Scene {
   private effectPanel!: EffectPanel
   private readonly effectRegistry = createDefaultEffectRegistry()
   private readonly cardFlashBursts = new Map<string, CardFlashBurstTransition>()
+  private readonly cardFlashes = new Map<string, CardFlashTransition>()
   private readonly cardDissolveReveals = new Map<
     string,
     CardDissolveRevealTransition
@@ -737,6 +740,11 @@ export class MainScene extends Phaser.Scene {
         {
           id: CARD_FLASH_BURST_ID,
           name: 'Card Flash Burst',
+          badge: 'TRANSITION',
+        },
+        {
+          id: CARD_FLASH_ID,
+          name: 'Card Flash',
           badge: 'TRANSITION',
         },
         {
@@ -795,6 +803,10 @@ export class MainScene extends Phaser.Scene {
       burst.update(time, delta)
     }
 
+    for (const flash of this.cardFlashes.values()) {
+      flash.update(time, delta)
+    }
+
     for (const reveal of this.cardDissolveReveals.values()) {
       reveal.update(time, delta)
     }
@@ -851,6 +863,11 @@ export class MainScene extends Phaser.Scene {
       return
     }
 
+    if (transitionId === CARD_FLASH_ID) {
+      this.handleCardFlashSelected()
+      return
+    }
+
     if (transitionId === CARD_DISSOLVE_REVEAL_ID) {
       this.handleCardDissolveRevealSelected()
       return
@@ -884,6 +901,27 @@ export class MainScene extends Phaser.Scene {
     }
 
     burst.run()
+    this.refreshTransitionPanelState()
+  }
+
+  private handleCardFlashSelected(): void {
+    const card = this.selectedCard
+    if (!card) {
+      return
+    }
+
+    let flash = this.cardFlashes.get(card.cardId)
+    if (!flash) {
+      flash = new CardFlashTransition({
+        width: card.cardWidth,
+        height: card.cardHeight,
+        cornerRadius: card.cornerRadius,
+      })
+      flash.enable(card.getEffectContext())
+      this.cardFlashes.set(card.cardId, flash)
+    }
+
+    flash.run()
     this.refreshTransitionPanelState()
   }
 
@@ -956,6 +994,10 @@ export class MainScene extends Phaser.Scene {
       const burst = this.cardFlashBursts.get(this.selectedCard.cardId)
       if (burst?.isRunning()) {
         active.add(CARD_FLASH_BURST_ID)
+      }
+      const flash = this.cardFlashes.get(this.selectedCard.cardId)
+      if (flash?.isRunning()) {
+        active.add(CARD_FLASH_ID)
       }
       const reveal = this.cardDissolveReveals.get(this.selectedCard.cardId)
       if (reveal?.isRunning()) {
@@ -1059,6 +1101,11 @@ export class MainScene extends Phaser.Scene {
       burst.destroy()
     }
     this.cardFlashBursts.clear()
+
+    for (const flash of this.cardFlashes.values()) {
+      flash.destroy()
+    }
+    this.cardFlashes.clear()
 
     for (const reveal of this.cardDissolveReveals.values()) {
       reveal.destroy()
