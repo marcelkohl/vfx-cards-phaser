@@ -33,6 +33,7 @@ import { EdgeGlowEffect, ShineSweepEffect } from 'phaser-vfx-effects'
 | Expanding Frame | action | [action/expanding-frame/README.md](./action/expanding-frame/README.md) |
 | Star Flare | action | [action/star-flare/README.md](./action/star-flare/README.md) |
 | Radial Glow | action | [action/radial-glow/README.md](./action/radial-glow/README.md) |
+| Streak Burst | action | [action/streak-burst/README.md](./action/streak-burst/README.md) |
 | Shine Sweep | action | [action/shine-sweep/README.md](./action/shine-sweep/README.md) |
 
 Orchestration lives in [`../transitions/`](../transitions/). Contracts live in [`../core/`](../core/).

@@ -30,6 +30,7 @@ export const EFFECT_IDS = {
   expandingFrame: 'expanding-frame',
   starFlare: 'star-flare',
   radialGlow: 'radial-glow',
+  streakBurst: 'streak-burst',
 } as const
 
 export type EffectId =

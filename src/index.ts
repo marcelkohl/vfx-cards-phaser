@@ -73,6 +73,8 @@ export {
   STAR_FLARE_DEFAULTS,
   RadialGlowEffect,
   RADIAL_GLOW_DEFAULTS,
+  StreakBurstEffect,
+  STREAK_BURST_DEFAULTS,
 } from './effects/action/index'
 export type {
   BloomFadeOptions,
@@ -108,6 +110,9 @@ export type {
   StarFlareScaleMode,
   RadialGlowOptions,
   RadialGlowPosition,
+  StreakBurstOptions,
+  StreakBurstPosition,
+  StreakBurstSpawnRegion,
 } from './effects/action/index'
 
 import { EffectRegistry } from './core/index'
@@ -140,6 +145,7 @@ import {
   ExpandingFrameEffect,
   StarFlareEffect,
   RadialGlowEffect,
+  StreakBurstEffect,
 } from './effects/action/index'
 import type {
   BloomFadeOptions,
@@ -155,6 +161,7 @@ import type {
   ExpandingFrameOptions,
   StarFlareOptions,
   RadialGlowOptions,
+  StreakBurstOptions,
 } from './effects/action/index'
 
 export function createDefaultEffectRegistry(): EffectRegistry {
@@ -343,6 +350,16 @@ export function createDefaultEffectRegistry(): EffectRegistry {
     kind: 'action',
     create: (options?: EffectCreateOptions) =>
       new RadialGlowEffect(options as RadialGlowOptions | undefined),
+  })
+
+  registry.register({
+    id: 'streak-burst',
+    name: 'Streak Burst',
+    description:
+      'Traços luminosos sob demanda (Action Effect: run / onFinish).',
+    kind: 'action',
+    create: (options?: EffectCreateOptions) =>
+      new StreakBurstEffect(options as StreakBurstOptions | undefined),
   })
 
   return registry

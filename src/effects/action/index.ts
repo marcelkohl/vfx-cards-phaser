@@ -91,3 +91,11 @@ export type {
   RadialGlowPosition,
 } from './radial-glow/radialGlowOptions'
 export { RADIAL_GLOW_DEFAULTS } from './radial-glow/radialGlowOptions'
+
+export { StreakBurstEffect } from './streak-burst/StreakBurstEffect'
+export type {
+  StreakBurstOptions,
+  StreakBurstPosition,
+  StreakBurstSpawnRegion,
+} from './streak-burst/streakBurstOptions'
+export { STREAK_BURST_DEFAULTS } from './streak-burst/streakBurstOptions'
