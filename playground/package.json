@@ -1,0 +1,22 @@
+{
+  "name": "phaser-vfx-effects-playground",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Optional demo consumer of phaser-vfx-effects.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "check": "tsc --noEmit",
+    "preview": "vite preview",
+    "clean": "rm -rf dist .vite"
+  },
+  "dependencies": {
+    "phaser": "latest",
+    "phaser-vfx-effects": "file:.."
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "vite": "^6.4.3"
+  }
+}

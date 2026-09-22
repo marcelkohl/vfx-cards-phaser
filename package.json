@@ -1,0 +1,44 @@
+{
+  "name": "phaser-vfx-effects",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portable Phaser VFX effects — persistent decorations, action animations, and transitions.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "src/**/*.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist",
+    "playground": "npm run build && npm run dev --prefix playground",
+    "playground:build": "npm run build && npm run build --prefix playground",
+    "playground:check": "npm run check --prefix playground"
+  },
+  "peerDependencies": {
+    "phaser": ">=3.60.0"
+  },
+  "devDependencies": {
+    "phaser": "latest",
+    "typescript": "latest"
+  },
+  "keywords": [
+    "phaser",
+    "vfx",
+    "effects",
+    "shaders",
+    "cards"
+  ],
+  "license": "UNLICENSED"
+}
