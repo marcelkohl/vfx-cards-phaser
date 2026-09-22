@@ -26,3 +26,14 @@ export {
   FEATHER_RISING_STAR_LATE_DEFAULTS,
   FEATHER_SPARKLE_DEFAULTS,
 } from './feather/featherOptions'
+
+export { CardFlareTransition } from './card-flare/CardFlareTransition'
+export type { CardFlareOptions } from './card-flare/cardFlareOptions'
+export {
+  CARD_FLARE_DEFAULTS,
+  CARD_FLARE_FRAME1_DEFAULTS,
+  CARD_FLARE_FRAME2_DEFAULTS,
+  CARD_FLARE_FRAME3_DEFAULTS,
+  CARD_FLARE_LIGHT_BURST_DEFAULTS,
+  CARD_FLARE_STAR_FLARE_DEFAULTS,
+} from './card-flare/cardFlareOptions'

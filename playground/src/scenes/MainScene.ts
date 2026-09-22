@@ -8,6 +8,7 @@ import {
 import {
   CardDissolveRevealTransition,
   CardFlashBurstTransition,
+  CardFlareTransition,
   FeatherTransition,
 } from '../recipes'
 import { EffectPanel } from '../ui/EffectPanel'
@@ -18,6 +19,7 @@ const SCREEN_PADDING = 32
 const CARD_FLASH_BURST_ID = 'card-flash-burst'
 const CARD_DISSOLVE_REVEAL_ID = 'card-dissolve-reveal'
 const FEATHER_ID = 'feather'
+const CARD_FLARE_ID = 'card-flare'
 
 /**
  * Shared geometry descriptions for the demo.
@@ -545,6 +547,7 @@ export class MainScene extends Phaser.Scene {
     CardDissolveRevealTransition
   >()
   private readonly featherTransitions = new Map<string, FeatherTransition>()
+  private readonly cardFlares = new Map<string, CardFlareTransition>()
 
   constructor() {
     super('MainScene')
@@ -573,6 +576,11 @@ export class MainScene extends Phaser.Scene {
         {
           id: FEATHER_ID,
           name: 'Feather',
+          badge: 'TRANSITION',
+        },
+        {
+          id: CARD_FLARE_ID,
+          name: 'Card Flare',
           badge: 'TRANSITION',
         },
       ],
@@ -622,6 +630,10 @@ export class MainScene extends Phaser.Scene {
 
     for (const feather of this.featherTransitions.values()) {
       feather.update(time, delta)
+    }
+
+    for (const flare of this.cardFlares.values()) {
+      flare.update(time, delta)
     }
 
     this.refreshTransitionPanelState()
@@ -675,6 +687,11 @@ export class MainScene extends Phaser.Scene {
 
     if (transitionId === FEATHER_ID) {
       this.handleFeatherSelected()
+      return
+    }
+
+    if (transitionId === CARD_FLARE_ID) {
+      this.handleCardFlareSelected()
     }
   }
 
@@ -741,6 +758,27 @@ export class MainScene extends Phaser.Scene {
     this.refreshTransitionPanelState()
   }
 
+  private handleCardFlareSelected(): void {
+    const card = this.selectedCard
+    if (!card) {
+      return
+    }
+
+    let flare = this.cardFlares.get(card.cardId)
+    if (!flare) {
+      flare = new CardFlareTransition({
+        width: card.cardWidth,
+        height: card.cardHeight,
+        cornerRadius: card.cornerRadius,
+      })
+      flare.enable(card.getEffectContext())
+      this.cardFlares.set(card.cardId, flare)
+    }
+
+    flare.run()
+    this.refreshTransitionPanelState()
+  }
+
   private refreshTransitionPanelState(): void {
     const active = new Set<string>()
     if (this.selectedCard) {
@@ -755,6 +793,10 @@ export class MainScene extends Phaser.Scene {
       const feather = this.featherTransitions.get(this.selectedCard.cardId)
       if (feather?.isRunning()) {
         active.add(FEATHER_ID)
+      }
+      const flare = this.cardFlares.get(this.selectedCard.cardId)
+      if (flare?.isRunning()) {
+        active.add(CARD_FLARE_ID)
       }
     }
     this.effectPanel.setActiveTransitionIds(active)
@@ -856,6 +898,11 @@ export class MainScene extends Phaser.Scene {
       feather.destroy()
     }
     this.featherTransitions.clear()
+
+    for (const flare of this.cardFlares.values()) {
+      flare.destroy()
+    }
+    this.cardFlares.clear()
 
     this.selectionIndicator.destroy()
     this.effectPanel.destroy()

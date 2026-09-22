@@ -4,3 +4,4 @@ dist
 *.local
 playground/dist
 playground/.vite
+.tmp
