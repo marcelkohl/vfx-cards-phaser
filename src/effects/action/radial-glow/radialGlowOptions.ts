@@ -73,7 +73,7 @@ export interface RadialGlowOptions {
    */
   holdDuration?: number
   /**
-   * Opacity fade-out duration in milliseconds (fast disappear). Default 140.
+   * Opacity fade-out duration in milliseconds (fast disappear). Default 160.
    * Prefer shorter than fadeInDuration.
    */
   fadeOutDuration?: number
@@ -145,8 +145,8 @@ export const RADIAL_GLOW_DEFAULTS: ResolvedRadialGlowOptions = {
   endScale: 1.2,
   fadeInDuration: 350,
   holdDuration: 80,
-  fadeOutDuration: 140,
-  duration: 570,
+  fadeOutDuration: 160,
+  duration: 590,
   softness: 0.7,
   position: 'front',
   blendMode: BLEND_ADD,
@@ -164,6 +164,9 @@ function lerp(a: number, b: number, t: number): number {
 /**
  * Opacity: fade-in → hold → fade-out.
  * Scale always moves startScale → endScale over the full lifetime (no reverse, no freeze).
+ *
+ * Fade-out uses (1 − t)² so opacity declines promptly and reaches true zero at the
+ * end of fadeOutDuration (smoothstep would linger near peak then drop abruptly).
  */
 export function sampleRadialGlowEnvelope(
   elapsedMs: number,
@@ -196,7 +199,9 @@ export function sampleRadialGlowEnvelope(
     strength = 1
   } else {
     const outT = fadeOut <= 0 ? 1 : (elapsedMs - fadeIn - hold) / fadeOut
-    strength = 1 - smoothstep(outT)
+    const t = clamp01(outT)
+    // Prompt decline with soft landing at zero — entire halo fades together.
+    strength = (1 - t) * (1 - t)
   }
 
   return { strength, scale, finished: false }

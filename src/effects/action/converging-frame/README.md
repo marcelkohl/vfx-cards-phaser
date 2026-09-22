@@ -3,23 +3,30 @@
 **Action Effect** — a luminous Edge Glow-like frame that starts slightly larger
 than the target and contracts inward once per `run()`.
 
+Optionally, after reaching `endScale`, the frame can remain fitted to the target
+while opacity fades out as a short **residual ghost**.
+
 Use it for a single quick converge, a slow magical contraction, or as a building
 block that a Transition / recipe can fire repeatedly for a tunnel-like sequence.
 
 ## Visual purpose
 
 ```text
-LARGER FRAME
-     ↓
-     ↓
-TARGET SIZE
-     ↓
- disappear
+CONVERGENCE                         GHOST / RESIDUAL
+
+startScale ───────────► endScale
+                             │
+                             │ scale stays fixed
+                             │
+                             ├──────────────────────►
+                             │
+opacity                      █████▓▓▒▒░░──────────► 0
+                             ◄── fadeOutDuration ──►
 ```
 
 - Frame appears outside the target.
 - Contracts smoothly toward the target dimensions.
-- Fades naturally while converging.
+- Optionally remains fitted and fades away (ghost).
 - Ends fully invisible.
 
 At its strongest moment the look matches **Edge Glow**: soft luminous edges,
@@ -39,7 +46,7 @@ There is no `repeatCount`, `repeatDelay`, or internal loop. A single:
 effect.run()
 ```
 
-performs exactly one complete convergence.
+performs exactly one complete convergence (plus optional residual fade).
 
 Repeated tunnel-like behavior should be orchestrated by a **Transition** or
 recipe that calls `run()` multiple times (or creates multiple instances).
@@ -59,17 +66,17 @@ const frame = new ConvergingFrameEffect({
   cornerRadius: 18,
   color: 0x66dd99,
   intensity: 0.95,
-  startScale: 1.1,
+  startScale: 1.3,
   endScale: 1,
-  duration: 420,
+  duration: 380,
   fadeInDuration: 50,
-  fadeOutDuration: 180,
+  fadeOutDuration: 200,
   position: 'front',
 })
 
 frame.enable({ scene, target })
 frame.onFinish(() => {
-  // natural completion
+  // fires after residual ghost reaches opacity 0
 })
 frame.run()
 ```
@@ -86,9 +93,9 @@ Registry id: `converging-frame`.
 | `intensity` | `0.95` | Peak band brightness |
 | `startScale` | `1.10` | Initial scale (larger than target) |
 | `endScale` | `1.0` | Final scale when convergence ends |
-| `duration` | `420` | Overall convergence movement (ms) |
+| `duration` | `420` | Convergence movement only (ms) |
 | `fadeInDuration` | `50` | Opacity rise at the start (ms) |
-| `fadeOutDuration` | `180` | Opacity fall at the end (ms) |
+| `fadeOutDuration` | `0` | Residual ghost fade after `endScale` (ms) |
 | `innerCoverage` | `0.09` | Inward glow reach (fraction of min side) |
 | `softness` | `0.9` | Falloff softness |
 | `cornerFocus` | `0.9` | Corner concentration |
@@ -107,30 +114,42 @@ starts ~10% larger than the target and contracts toward `endScale`.
 
 Corner geometry stays coherent while scaling (uniform scale on the display object).
 
-### Duration
+### Duration and total lifetime
 
-`duration` controls the convergence movement only. It is not hard-coded for any
-recipe — consumers choose fast or slow:
+```text
+total lifetime = duration + fadeOutDuration
+```
+
+| Phase | Controls | Scale | Opacity |
+|---|---|---|---|
+| Convergence | `duration` | `startScale → endScale` | fade-in, then full |
+| Ghost | `fadeOutDuration` | **frozen at `endScale`** | fade → 0 |
 
 ```ts
-{ duration: 180 }  // fast tunnel-like pulse
-{ duration: 900 }  // slower magical converge
+{ duration: 180 }                 // fast pulse, no residual (default)
+{ duration: 380, fadeOutDuration: 200 }  // converge then ghost
+{ duration: 900 }                 // slower magical converge
 ```
 
 ### Fade timing
 
-`fadeInDuration` and `fadeOutDuration` are independent.
-
-At `run()`:
+`fadeInDuration` and `fadeOutDuration` are independent and sequential:
 
 1. Start invisible (strength `0`).
-2. Fade in cleanly.
+2. Fade in cleanly during early convergence.
 3. Converge (scale `startScale → endScale` over `duration`).
-4. Fade out toward the end of `duration`.
-5. Finish fully invisible.
+4. If `fadeOutDuration > 0`: stay at `endScale` and fade residual to 0.
+5. Opacity reaches 0 → finish → `onFinish()`.
 
-No initial-frame flicker — opacity is reset before playback is armed, and the
-first update samples `elapsed = 0`.
+Default `fadeOutDuration: 0` preserves the previous “converge → finish” behavior
+for callers that omit the option.
+
+**Semantic change:** previously `fadeOutDuration` faded opacity during the last
+portion of `duration` while scale was still moving. It now runs **after**
+convergence, with scale frozen. Callers that already pass a positive
+`fadeOutDuration` get a residual ghost instead of a mid-convergence fade.
+
+No initial-frame flicker — opacity is reset before playback is armed.
 
 ## Relationship with Edge Glow
 
@@ -142,8 +161,8 @@ temporary action that shares the visual language, not the persistent lifecycle.
 
 | | Converging Frame | Soft Glow Pulse | Edge Glow |
 |---|---|---|---|
-| Role | Action, one converge | Action, opacity breath | Persistent |
-| Motion | Scale inward | Opacity only | Static (optional pulse) |
+| Role | Action, one converge (+ optional ghost) | Action, opacity breath | Persistent |
+| Motion | Scale inward, then freeze | Opacity only | Static (optional pulse) |
 | Shader | Edge Glow | Edge Glow | Edge Glow |
 
 ## Lifecycle
@@ -151,12 +170,13 @@ temporary action that shares the visual language, not the persistent lifecycle.
 | Method | Behavior |
 |---|---|
 | `enable(ctx)` | Prepare, remain invisible |
-| `run()` | Reset and play **one** convergence |
+| `run()` | Reset and play **one** convergence (+ optional ghost) |
 | `stop()` | Stop immediately, hide (no `onFinish`) |
-| `onFinish(cb)` | Fires once on natural completion |
+| `onFinish(cb)` | Fires once after residual reaches opacity 0 |
 | `disable` / `destroy` | Release visuals / listeners / resources |
 
-Calling `run()` while already active restarts the convergence cleanly.
+Calling `run()` while already converging **or** during the ghost fade restarts
+cleanly from `startScale` / opacity 0.
 
 ## Positioning / layering
 
@@ -188,12 +208,13 @@ timeline
 ## Playground
 
 **Action Effects → Converging Frame**. Each click runs one convergence.
+The medium preset demonstrates residual ghost fade after the frame settles.
 
 ## Out of scope
 
 Not included in this effect:
 
-- `repeatCount` / `repeatDelay`
-- Card Flare recipe
+- `holdDuration` / `repeatCount` / `repeatDelay`
+- Card Flare recipe integration
 - Light Burst / Star Flare / camera shake / sound
 - Card-specific behavior

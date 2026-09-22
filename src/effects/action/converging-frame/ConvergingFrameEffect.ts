@@ -36,7 +36,8 @@ function isWebGLRenderer(scene: Phaser.Scene): boolean {
 /**
  * Temporary Edge Glow-like luminous frame that starts larger than the target
  * and contracts inward once per `run()` (Action Effect).
- * Idle and invisible after `enable()` — call `run()` to play one convergence.
+ * Optional residual ghost fade keeps the frame at `endScale` while opacity
+ * falls to zero. Idle after `enable()` — call `run()` to play one convergence.
  */
 export class ConvergingFrameEffect implements ActionEffect {
   public readonly id = EFFECT_IDS.convergingFrame
@@ -83,13 +84,14 @@ export class ConvergingFrameEffect implements ActionEffect {
     }
   }
 
-  /** Starts (or restarts) one inward convergence. Fires `onFinish` when it ends. */
+  /** Starts (or restarts) one inward convergence (+ optional ghost). Fires `onFinish` when it ends. */
   public run(): this {
     if (!this.options || (!this.shader && !this.graphics)) {
       return this
     }
 
     // Reset to invisible + start scale before arming — avoids a stale flash.
+    // Also clears any in-progress ghost fade.
     this.running = false
     this.elapsedMs = 0
     this.strength = 0
@@ -137,9 +139,11 @@ export class ConvergingFrameEffect implements ActionEffect {
       return
     }
 
-    // Sample before advancing so the first armed frame stays at elapsed=0 (invisible).
+    // Advance first so late ghost-fade / true-zero samples are applied before
+    // natural completion (avoids a visible pop when finishing).
+    this.elapsedMs += Math.max(delta, 0)
     const sample = sampleConvergingFrameEnvelope(this.elapsedMs, this.options)
-    this.strength = sample.finished ? 0 : sample.strength
+    this.strength = sample.strength
     this.scale = sample.scale
     this.applyVisualState()
 
@@ -147,10 +151,7 @@ export class ConvergingFrameEffect implements ActionEffect {
       this.running = false
       this.elapsedMs = 0
       this.emitFinish()
-      return
     }
-
-    this.elapsedMs += Math.max(delta, 0)
   }
 
   private applyVisualState(): void {

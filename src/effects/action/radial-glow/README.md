@@ -77,7 +77,7 @@ const glow = new RadialGlowEffect({
   endScale: 1.18,
   fadeInDuration: 360,
   holdDuration: 90,
-  fadeOutDuration: 140,
+  fadeOutDuration: 160,
   softness: 0.68,
   position: 'front',
 })
@@ -107,11 +107,11 @@ Registry id: `radial-glow`.
 | `endScale` | `1.2` | Scale at t = 1 |
 | `fadeInDuration` | `350` | Opacity fade-in (ms) |
 | `holdDuration` | `80` | Peak opacity hold (ms) |
-| `fadeOutDuration` | `140` | Opacity fade-out (ms) |
+| `fadeOutDuration` | `160` | Opacity fade-out (ms) |
 | `softness` | `0.7` | Soft haze / trail dissolve (does not thicken the rim core) |
 | `position` | `'front'` | `'front'` / `'back'` layering |
 
-Resolved `duration` = `fadeInDuration + holdDuration + fadeOutDuration` (default **570** ms). There is no separate public `duration` or `peakAt` — phases are the timing model.
+Resolved `duration` = `fadeInDuration + holdDuration + fadeOutDuration` (default **590** ms). There is no separate public `duration` or `peakAt` — phases are the timing model.
 
 Defaults intentionally favor `innerTrail > outerGlow` and `fadeInDuration > fadeOutDuration`.
 
@@ -153,6 +153,8 @@ small ────────────────────────�
 ```
 
 **Expansion continues independently** through fade-in, hold, and fade-out. Scale never freezes during hold and never contracts.
+
+Fade-out declines promptly via `(1 − t)²` so opacity reaches true zero by the end of `fadeOutDuration` before `onFinish` — no abrupt pop when the renderer resets.
 
 ## Radial profile
 

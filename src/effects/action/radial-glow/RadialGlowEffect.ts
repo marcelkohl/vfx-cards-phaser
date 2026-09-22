@@ -143,20 +143,21 @@ export class RadialGlowEffect implements ActionEffect {
       return
     }
 
-    // Sample before advancing so the first armed frame stays at elapsed=0.
+    // Advance first so large deltas sample the post-delta envelope (including
+    // late fade-out / true zero) instead of replaying a stale high-opacity frame.
+    this.elapsedMs += Math.max(delta, 0)
     const sample = sampleRadialGlowEnvelope(this.elapsedMs, this.options)
-    this.strength = sample.finished ? 0 : sample.strength
+    this.strength = sample.strength
     this.scale = sample.scale
     this.applyVisual()
 
     if (sample.finished) {
+      // strength is already 0 from the finished sample — opacity removed the
+      // ring before natural completion hides/resets.
       this.running = false
       this.elapsedMs = 0
       this.emitFinish()
-      return
     }
-
-    this.elapsedMs += Math.max(delta, 0)
   }
 
   public disable(): void {

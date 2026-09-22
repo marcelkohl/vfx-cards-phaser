@@ -2,6 +2,7 @@ import type { EffectContext } from 'phaser-vfx-effects'
 import {
   ConvergingFrameEffect,
   LightBurstEffect,
+  RadialGlowEffect,
   StarFlareEffect,
   Transition,
 } from 'phaser-vfx-effects'
@@ -18,13 +19,14 @@ export {
   CARD_FLARE_FRAME2_DEFAULTS,
   CARD_FLARE_FRAME3_DEFAULTS,
   CARD_FLARE_LIGHT_BURST_DEFAULTS,
+  CARD_FLARE_RADIAL_GLOW_DEFAULTS,
   CARD_FLARE_STAR_FLARE_DEFAULTS,
 } from './cardFlareOptions'
 
 export type CardFlareFinishCallback = (transition: CardFlareTransition) => void
 
 /**
- * Playground recipe: 3× Converging Frame (tunnel) → Star Flare + Light Burst (impact).
+ * Playground recipe: tunnel frames → Star + Burst + Radial Glow impact → layered decay.
  *
  * Composition only — visuals come from phaser-vfx-effects Action Effects.
  * Educational example; not part of the package public API.
@@ -33,13 +35,13 @@ export type CardFlareFinishCallback = (transition: CardFlareTransition) => void
  * Transition starts each ActionEffect instance at most once per run().
  *
  * Pacing: anticipation (overlapping frames) first; impact enters later near
- * the end of the tunnel; Light Burst outlives Star Flare in the decay.
+ * the end of the tunnel; Light Burst outlives Star Flare and Radial Glow.
  */
 export class CardFlareTransition {
   public readonly id = 'card-flare'
   public readonly name = 'Card Flare'
   public readonly description =
-    'Recipe: blue tunnel frames → delayed star + burst impact → expanding decay.'
+    'Recipe: blue tunnel → delayed star + burst + halo impact → expanding decay.'
 
   private readonly inputOptions: CardFlareOptions
   private options: ResolvedCardFlareOptions
@@ -47,6 +49,7 @@ export class CardFlareTransition {
   private frame2: ConvergingFrameEffect
   private frame3: ConvergingFrameEffect
   private lightBurst: LightBurstEffect
+  private radialGlow: RadialGlowEffect
   private starFlare: StarFlareEffect
   private readonly timeline = new Transition()
   private context: EffectContext | null = null
@@ -61,6 +64,7 @@ export class CardFlareTransition {
     this.frame2 = this.createFrame(this.options.frame2)
     this.frame3 = this.createFrame(this.options.frame3)
     this.lightBurst = this.createLightBurst()
+    this.radialGlow = this.createRadialGlow()
     this.starFlare = this.createStarFlare()
     this.wireTimeline()
   }
@@ -77,19 +81,22 @@ export class CardFlareTransition {
     this.frame2.destroy()
     this.frame3.destroy()
     this.lightBurst.destroy()
+    this.radialGlow.destroy()
     this.starFlare.destroy()
 
     this.frame1 = this.createFrame(this.options.frame1)
     this.frame2 = this.createFrame(this.options.frame2)
     this.frame3 = this.createFrame(this.options.frame3)
     this.lightBurst = this.createLightBurst()
+    this.radialGlow = this.createRadialGlow()
     this.starFlare = this.createStarFlare()
 
-    // Frames first, then burst, then star on top as the focal hit.
+    // Frames → burst → halo → star on top as the focal hit.
     this.frame1.enable(context)
     this.frame2.enable(context)
     this.frame3.enable(context)
     this.lightBurst.enable(context)
+    this.radialGlow.enable(context)
     this.starFlare.enable(context)
 
     this.wireTimeline()
@@ -105,6 +112,7 @@ export class CardFlareTransition {
     this.frame2.stop()
     this.frame3.stop()
     this.lightBurst.stop()
+    this.radialGlow.stop()
     this.starFlare.stop()
 
     this.timeline.run()
@@ -117,6 +125,7 @@ export class CardFlareTransition {
     this.frame2.stop()
     this.frame3.stop()
     this.lightBurst.stop()
+    this.radialGlow.stop()
     this.starFlare.stop()
     return this
   }
@@ -142,6 +151,7 @@ export class CardFlareTransition {
     this.frame2.update?.(time, delta)
     this.frame3.update?.(time, delta)
     this.lightBurst.update?.(time, delta)
+    this.radialGlow.update?.(time, delta)
     this.starFlare.update?.(time, delta)
   }
 
@@ -155,6 +165,7 @@ export class CardFlareTransition {
     this.frame2.destroy()
     this.frame3.destroy()
     this.lightBurst.destroy()
+    this.radialGlow.destroy()
     this.starFlare.destroy()
     this.context = null
     this.prepared = false
@@ -182,6 +193,15 @@ export class CardFlareTransition {
     })
   }
 
+  private createRadialGlow(): RadialGlowEffect {
+    const { width, height, radialGlow } = this.options
+    return new RadialGlowEffect({
+      width,
+      height,
+      ...radialGlow,
+    })
+  }
+
   private createStarFlare(): StarFlareEffect {
     const { width, height, starFlare } = this.options
     return new StarFlareEffect({
@@ -201,6 +221,7 @@ export class CardFlareTransition {
       .add({ at: this.options.frame2At, effect: this.frame2 })
       .add({ at: this.options.frame3At, effect: this.frame3 })
       .add({ at: this.options.lightBurstAt, effect: this.lightBurst })
+      .add({ at: this.options.radialGlowAt, effect: this.radialGlow })
       .add({ at: this.options.starFlareAt, effect: this.starFlare })
 
     this.finishUnsub = this.timeline.onFinish(() => {

@@ -11,18 +11,31 @@ transitions; do not expect a package export named `CardFlareTransition`.
 A blue / cyan magical flare with clear progression:
 
 ```text
-ANTICIPATION / TUNNEL          IMPACT                 DECAY
+TUNNEL                         IMPACT                    DECAY
 
-Frame 1 ──────────►
-       Frame 2 ──────────►
-              Frame 3 ──────────►
+Frame 1 ──────────► ▒ ghost
+       Frame 2 ──────────► ▒
+              Frame 3 ──────────► ▒▒
 
                            Star Flare ────────►
 
                            Light Burst ───────────────────►
+
+                           Radial Glow ─────────────►
 ```
 
-It should feel like: **converge → converge → converge → IMPACT → expanding decay**.
+It should feel like: **tunnel → IMPACT → layered decay**.
+
+## Four visual layers
+
+| # | Effect | Role |
+|---|---|---|
+| 1 | **Converging Frame** ×3 | Tunnel / anticipation / fitted residual ghost |
+| 2 | **Star Flare** | Concentrated central impact |
+| 3 | **Light Burst** | Large directional rays + long expanding tail |
+| 4 | **Radial Glow** | Subtle expanding optical halo ring |
+
+Radial Glow begins during **impact**, not during the initial tunnel.
 
 ## Phases
 
@@ -33,36 +46,43 @@ Three staggered `ConvergingFrameEffect` passes dominate the opening.
 - First frame starts **clearly larger** than the card (`startScale ≈ 1.30`).
 - Each pass overlaps the previous so **two frames at different scales** are visible.
 - Bright luminous blue / cyan — substantial soft edge glow, not a thin border.
+- After each frame reaches `endScale`, a short residual ghost may remain fitted.
 - Impact effects do **not** start here.
 
 ### Phase 2 — Flare impact
 
-Near the end of the tunnel (final frame still approaching the card):
+Near the end of the tunnel (final frame still approaching / settling on the card):
 
 - `StarFlareEffect` — small hot core, thin streaks (short lifetime).
 - `LightBurstEffect` — front radial rays crossing the artwork (longer lifetime).
+- `RadialGlowEffect` — subtle thin cyan optical halo (atmospheric support).
 
-Brightness peaks land approximately together (~400 ms). At climax you should still
-see at least one converging frame + card + star + burst rays at once.
+Brightness peaks land approximately together (~400 ms). At climax you should see
+frames / residual + card + star + burst rays + halo ring at once.
 
-### Phase 3 — Expanding decay
+### Phase 3 — Layered decay
 
-- Frames finish.
-- Star fades out quickly while still expanding (`scaleMode: 'continuous'`).
-- Light Burst keeps opening with a longer translucent tail, then clears.
+Approximate order (overlapping, not hard cuts):
+
+1. Star Flare fades relatively quickly (still expanding).
+2. Converging Frame residuals fade.
+3. Radial Glow expands while fading smoothly to zero.
+4. Light Burst continues its longer expanding translucent tail, then clears.
 
 ## Effects used
 
 | Effect | Role | Count |
 |---|---|---:|
-| **Converging Frame** | Tunnel / depth rhythm | 3 instances |
-| **Light Burst** | Large radial energy + long tail | 1 |
+| **Converging Frame** | Tunnel / depth / residual | 3 instances |
+| **Light Burst** | Directional radial energy + long tail | 1 |
 | **Star Flare** | Short focal impact | 1 |
+| **Radial Glow** | Subtle optical halo | 1 |
 
 ```ts
 import {
   ConvergingFrameEffect,
   LightBurstEffect,
+  RadialGlowEffect,
   StarFlareEffect,
   Transition,
 } from 'phaser-vfx-effects'
@@ -70,7 +90,7 @@ import {
 
 ## Why Converging Frame is repeated by the recipe
 
-`ConvergingFrameEffect.run()` performs **one** convergence.
+`ConvergingFrameEffect.run()` performs **one** convergence (+ optional ghost).
 
 Repetition is owned here: three separate instances on a `Transition` timeline.
 They are deliberately staggered and overlapping — not sequential one-after-another.
@@ -84,60 +104,90 @@ FRAME 1 ───────────►
 ## Approximate timeline
 
 ```text
-0 ms      Converging Frame 1   (scale 1.32 → 1.0, ~420 ms)
-120 ms    Converging Frame 2   (scale 1.30 → 1.0, ~400 ms)
-240 ms    Converging Frame 3   (scale 1.26 → 1.0, ~380 ms)
+0 ms      Converging Frame 1   (1.32 → 1.0, 420 ms + 160 ms ghost)
+120 ms    Converging Frame 2   (1.30 → 1.0, 400 ms + 160 ms ghost)
+240 ms    Converging Frame 3   (1.26 → 1.0, 380 ms + 200 ms ghost)
 300 ms    Light Burst          (~820 ms, continuous expand)
+305 ms    Radial Glow          (~435 ms: 100 + 55 + 280)
 310 ms    Star Flare           (~400 ms, continuous expand)
 
-≈ 402 ms  shared opacity peak (impact)
-≈ 710 ms  star gone; burst still expanding
-≈ 1120 ms burst finishes (end of transition)
+≈ 402–405 ms  shared opacity peak (impact)
+≈ 710 ms      star gone; halo still fading; burst expanding
+≈ 740 ms      Radial Glow natural completion (smooth fade to 0)
+≈ 820 ms      Frame 3 ghost done (~240 + 380 + 200)
+≈ 1120 ms     Light Burst finishes (end of transition)
 ```
 
 ```text
 TIME ─────────────────────────────────────────────►
 
 Frame 1
-██████████████
+██████████████▒▒
 
        Frame 2
-       ██████████████
+       ██████████████▒▒
 
               Frame 3
-              ██████████████
+              ██████████████▒▒▒▒
 
                          STAR
                          ███████████
 
                          LIGHT BURST
                          ███████████████████
+
+                         RADIAL GLOW
+                         ░░██████████████▒▒░░
 ```
-
-## Color hierarchy
-
-| Layer | Tint |
-|---|---|
-| Bright center | near-white / pale cyan (`0xf2fcff`) |
-| Frames | luminous blue (`0x4ec8ff`) |
-| Burst rays | cyan / blue, lower opacity (`0x66ddff`) |
-
-One coherent blue magical event — not three unrelated palettes.
 
 ## Intensity hierarchy
 
 ```text
-                   short duration
-                        ▲
-              bright central star
-                  central glow
-             converging frames
-          large translucent rays
-                        ▼
-                   large area
+1. Star Flare hot center          ← strongest focal point
+2. Light Burst / central cyan
+3. Converging Frame residual
+4. Radial Glow optical halo       ← atmospheric support
 ```
 
-Largest elements stay more transparent; the tiny center can be brightest.
+Radial Glow must stay subtle/translucent — never neon-bright enough to compete
+with the star or make Light Burst unreadable as rays.
+
+## Light Burst vs Radial Glow
+
+Distinct jobs — keep them visually distinguishable:
+
+```text
+Light Burst                  Radial Glow
+
+  \   |   /                    .-----------.
+   \  |  /                  .                 .
+───── ✦ ─────             .                     .
+   /  |  \                 .                     .
+  /   |   \                  .                 .
+                               '-----------'
+```
+
+## Radial Glow (recipe config)
+
+```ts
+position: 'front'
+color: 0x4ec8ff
+intensity: 0.3
+opacity: 0.82
+radius: 125
+ringWidth: 1.5
+rimIntensity: 2.4
+innerTrail: 0.5
+outerGlow: 0.09
+startScale: 0.72
+endScale: 1.18
+fadeInDuration: 100
+holdDuration: 55
+fadeOutDuration: 280
+```
+
+Peak ≈ `radialGlowAt + fadeInDuration` ≈ 405 ms. Continuous expansion during
+fade-out; Transition waits for natural completion so the smooth fade is not cut off.
 
 ## Light Burst
 
@@ -150,9 +200,6 @@ startScale: 0.5
 endScale: 1.45
 peakAt: 0.125   // absolute peak sync’d with star
 ```
-
-Rays must be clearly readable over the card and outside it, while staying
-translucent enough that artwork remains visible. Continuous expansion during fade.
 
 ## Star Flare
 
@@ -169,20 +216,17 @@ startScale: 0.4
 endScale: 1.12
 ```
 
-Compact hot core with a clearly visible peak (~400 ms lifetime). Continuous
-expansion; still shorter than the Light Burst tail.
-
 ## How to tune
 
 | Knob | What it changes |
 |---|---|
 | Frame `startScale` / `duration` | Tunnel depth and overlap |
+| Frame `fadeOutDuration` | Fitted residual after converge |
 | `frame2At` / `frame3At` | How stacked the tunnel feels |
-| `lightBurstAt` / `starFlareAt` | When impact arrives after anticipation |
-| Frame `intensity` / `color` | Tunnel presence |
-| Star thicknesses / `glowRadius` | Core size |
+| `lightBurstAt` / `starFlareAt` / `radialGlowAt` | Impact sync |
+| Radial Glow `intensity` / `opacity` | Halo presence (keep subtle) |
+| Radial Glow `fadeIn` / `hold` / `fadeOut` | Halo peak window & soft exit |
 | Burst `duration` / `endScale` | Length of expanding decay |
-| `peakAt` (both) | Absolute impact sync |
 
 ## Usage in this playground
 
@@ -194,6 +238,9 @@ Replay: clicking again while active restarts the full composition.
 
 On natural finish or `stop()` / `destroy()`:
 
-- all three frames, Light Burst, and Star Flare are stopped/hidden;
+- all three frames, Light Burst, Radial Glow, and Star Flare are stopped/hidden;
 - timeline listeners are cleared;
 - no Graphics residue and no stale finish callbacks remain.
+
+Natural finish waits until **every** scheduled Action Effect completes —
+including Radial Glow’s smooth fade-out and Light Burst’s long tail.

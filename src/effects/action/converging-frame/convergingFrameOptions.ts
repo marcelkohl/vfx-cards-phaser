@@ -31,8 +31,9 @@ export interface ConvergingFrameOptions {
    */
   endScale?: number
   /**
-   * Overall convergence movement duration in milliseconds.
-   * Scale always lerps over this window. Default 420.
+   * Convergence movement duration in milliseconds.
+   * Scale lerps `startScale → endScale` only over this window. Default 420.
+   * Total lifetime = `duration + fadeOutDuration`.
    */
   duration?: number
   /**
@@ -41,8 +42,9 @@ export interface ConvergingFrameOptions {
    */
   fadeInDuration?: number
   /**
-   * Opacity fall at the end of the convergence, in milliseconds.
-   * Independent of `fadeInDuration`. Default 180.
+   * Residual ghost fade after convergence reaches `endScale` (ms).
+   * Scale stays fixed at `endScale` while opacity falls to 0.
+   * Default `0` — converge then finish (no residual).
    */
   fadeOutDuration?: number
   /**
@@ -110,7 +112,7 @@ export const CONVERGING_FRAME_DEFAULTS: ResolvedConvergingFrameOptions = {
   endScale: 1,
   duration: 420,
   fadeInDuration: 50,
-  fadeOutDuration: 180,
+  fadeOutDuration: 0,
   innerCoverage: 0.09,
   softness: 0.9,
   cornerFocus: 0.9,
@@ -141,15 +143,20 @@ export interface ConvergingFrameSample {
 }
 
 /**
- * Samples one convergence: scale moves `startScale → endScale` over `duration`
- * while opacity fades in at the start and out at the end.
- * Starts and ends at strength 0 — never flashes at full intensity.
+ * Samples one convergence + optional residual ghost.
+ *
+ * Phase 1 (`0 … duration`): scale `startScale → endScale`, fade-in at start.
+ * Phase 2 (`duration … duration + fadeOutDuration`): scale frozen at `endScale`,
+ * opacity fades to 0. When `fadeOutDuration` is 0, finishes at end of phase 1.
  */
 export function sampleConvergingFrameEnvelope(
   elapsedMs: number,
   options: ResolvedConvergingFrameOptions,
 ): ConvergingFrameSample {
   const duration = Math.max(options.duration, 1)
+  const fadeIn = Math.max(options.fadeInDuration, 0)
+  const fadeOut = Math.max(options.fadeOutDuration, 0)
+  const total = duration + fadeOut
   const startScale = options.startScale
   const endScale = options.endScale
 
@@ -157,26 +164,33 @@ export function sampleConvergingFrameEnvelope(
     return { scale: startScale, strength: 0, finished: false }
   }
 
-  if (elapsedMs >= duration) {
+  if (elapsedMs >= total) {
     return { scale: endScale, strength: 0, finished: true }
   }
 
-  const progress = easeOutCubic(elapsedMs / duration)
-  const scale = startScale + (endScale - startScale) * progress
-
-  const fadeIn = Math.max(options.fadeInDuration, 0)
-  const fadeOut = Math.max(options.fadeOutDuration, 0)
-
-  let strength = 1
-  if (fadeIn > 0 && elapsedMs < fadeIn) {
-    strength = smoothstep(elapsedMs / fadeIn)
+  // --- Scale: only moves during convergence ---
+  let scale: number
+  if (elapsedMs < duration) {
+    const progress = easeOutCubic(elapsedMs / duration)
+    scale = startScale + (endScale - startScale) * progress
+  } else {
+    scale = endScale
   }
 
-  if (fadeOut > 0) {
-    const outStart = Math.max(duration - fadeOut, 0)
-    if (elapsedMs > outStart) {
-      const outT = clamp((elapsedMs - outStart) / fadeOut, 0, 1)
-      strength = Math.min(strength, 1 - smoothstep(outT))
+  // --- Opacity ---
+  let strength = 1
+  const fadeInEnd = Math.min(fadeIn, duration)
+  if (fadeInEnd > 0 && elapsedMs < fadeInEnd) {
+    strength = smoothstep(elapsedMs / fadeInEnd)
+  }
+
+  if (elapsedMs >= duration) {
+    if (fadeOut <= 0) {
+      strength = 0
+    } else {
+      const outT = clamp((elapsedMs - duration) / fadeOut, 0, 1)
+      // Prompt decline with soft landing at zero before natural completion.
+      strength = (1 - outT) * (1 - outT)
     }
   }
 
