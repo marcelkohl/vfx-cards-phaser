@@ -182,10 +182,14 @@ export class LightBurstEffect implements ActionEffect {
     this.graphics.setName(`effect:${this.id}`)
     this.graphics.setBlendMode(this.options.blendMode)
 
+    // Child order within the target container is the layering mechanism:
+    // front = above artwork/border; back = under the opaque frame fill.
     if (this.options.position === 'back') {
       context.target.addAt(this.graphics, 0)
+      context.target.sendToBack(this.graphics)
     } else {
       context.target.add(this.graphics)
+      context.target.bringToTop(this.graphics)
     }
 
     this.drawRays()
@@ -208,17 +212,15 @@ export class LightBurstEffect implements ActionEffect {
     const growth = Math.max(this.scale, 0.05)
     const halfW = width / 2
     const halfH = height / 2
-    const innerX = halfW * (1 - originInset)
-    const innerY = halfH * (1 - originInset)
 
     for (const ray of this.rays) {
       const cos = Math.cos(ray.angle)
       const sin = Math.sin(ray.angle)
       const edgeDist = distanceToRectEdge(halfW, halfH, cos, sin)
-      const startDist = Math.min(
-        edgeDist * (1 - originInset * 0.35),
-        Math.hypot(innerX, innerY),
-      )
+      // originInset is a fraction of the center→edge distance (0 = at edge,
+      // 0.5 = halfway to center). Bright bases therefore sit over artwork
+      // when position is 'front', and are hidden under the frame when 'back'.
+      const startDist = Math.max(edgeDist * (1 - originInset), 0)
       // Scale only the outward extension so rays open from a stable origin.
       const tipDist = edgeDist + rayLength * ray.lengthScale * growth
 

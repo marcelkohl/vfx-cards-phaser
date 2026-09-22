@@ -144,9 +144,19 @@ permanece estável.
 
 ## Layering
 
-`position: 'front' | 'back'` — mesmo padrão dos outros effects. Use `'front'`
-quando o burst precisa renderizar **na frente** do target (ex.: Card Flare).
-Não existe um efeito separado “Front Light Burst”.
+`position: 'front' | 'back'` controls child order on the target container:
+
+| Value | Display list | Visual result |
+|---|---|---|
+| `'front'` (default) | `add` + `bringToTop` | Rays draw **over** artwork/border; bright bases cross the card face |
+| `'back'` | `addAt(0)` + `sendToBack` | Rays sit **under** the opaque frame fill; only overhang outside the card shows |
+
+Use `'front'` when the burst must read as light over the target (e.g. future Card Flare).
+There is no separate “Front Light Burst” effect.
+
+`originInset` controls how far toward the center the bright ray bases begin.
+With `'front'`, a moderate inset (e.g. `0.3`) makes the over-card crossing obvious.
+With `'back'`, those same bases are hidden behind the frame.
 
 ## Lifecycle
 
@@ -179,8 +189,10 @@ transition.run()
 
 No painel, **Light Burst**: 1º clique monta + `run()`; cliques seguintes chamam `run()` de novo.
 
-O preset do Card 1 usa `scaleMode: 'continuous'` para deixar óbvio que, após o
-pico de brilho, os raios seguem expandindo enquanto somem.
+- **Card 1** — `position: 'front'` (+ continuous scale): rays must clearly cross
+  over the artwork.
+- **Card 2** — `position: 'back'`: same-style burst, but only the exterior
+  overhang remains visible under the opaque frame.
 
 ## Limitações
 

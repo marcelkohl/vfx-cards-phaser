@@ -35,8 +35,10 @@ export interface LightBurstOptions {
   /** Total animation duration in milliseconds. Default 420. */
   duration?: number
   /**
-   * How far inside the frame the rays begin, as a fraction of half-size (0..0.6).
-   * Higher = more “from behind / inside”. Default 0.18.
+   * How far inside the frame the rays begin, as a fraction of the center→edge
+   * distance (0..0.6). `0` = at the edge; `0.18` ≈ 18% toward the center.
+   * Higher values make bright bases cross more of the card face (visible when
+   * `position` is `'front'`). Default 0.18.
    */
   originInset?: number
   /** Angular irregularity 0..1 (avoids a rigid star). Default 0.55. */
