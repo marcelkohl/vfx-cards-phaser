@@ -11,6 +11,7 @@ import {
   CardFlashTransition,
   CardFlareTransition,
   FeatherTransition,
+  LightBurstProgressChain,
 } from '../recipes'
 import { EffectPanel } from '../ui/EffectPanel'
 import { SelectionIndicator } from '../ui/SelectionIndicator'
@@ -22,6 +23,7 @@ const CARD_FLASH_ID = 'card-flash'
 const CARD_DISSOLVE_REVEAL_ID = 'card-dissolve-reveal'
 const FEATHER_ID = 'feather'
 const CARD_FLARE_ID = 'card-flare'
+const LIGHT_BURST_PROGRESS_CHAIN_ID = 'light-burst-progress-chain'
 
 /**
  * Shared geometry descriptions for the demo.
@@ -785,6 +787,10 @@ export class MainScene extends Phaser.Scene {
   >()
   private readonly featherTransitions = new Map<string, FeatherTransition>()
   private readonly cardFlares = new Map<string, CardFlareTransition>()
+  private readonly lightBurstProgressChains = new Map<
+    string,
+    LightBurstProgressChain
+  >()
 
   constructor() {
     super('MainScene')
@@ -824,6 +830,11 @@ export class MainScene extends Phaser.Scene {
           id: CARD_FLARE_ID,
           name: 'Card Flare',
           badge: 'TRANSITION',
+        },
+        {
+          id: LIGHT_BURST_PROGRESS_CHAIN_ID,
+          name: 'Light Burst Progress Chain',
+          badge: 'VALIDATION',
         },
       ],
       onEffectSelected: (effectId) => this.handleEffectSelected(effectId),
@@ -880,6 +891,10 @@ export class MainScene extends Phaser.Scene {
 
     for (const flare of this.cardFlares.values()) {
       flare.update(time, delta)
+    }
+
+    for (const chain of this.lightBurstProgressChains.values()) {
+      chain.update(time, delta)
     }
 
     this.refreshTransitionPanelState()
@@ -943,6 +958,11 @@ export class MainScene extends Phaser.Scene {
 
     if (transitionId === CARD_FLARE_ID) {
       this.handleCardFlareSelected()
+      return
+    }
+
+    if (transitionId === LIGHT_BURST_PROGRESS_CHAIN_ID) {
+      this.handleLightBurstProgressChainSelected()
     }
   }
 
@@ -1051,6 +1071,27 @@ export class MainScene extends Phaser.Scene {
     this.refreshTransitionPanelState()
   }
 
+  private handleLightBurstProgressChainSelected(): void {
+    const card = this.selectedCard
+    if (!card) {
+      return
+    }
+
+    let chain = this.lightBurstProgressChains.get(card.cardId)
+    if (!chain) {
+      chain = new LightBurstProgressChain(
+        card.cardWidth,
+        card.cardHeight,
+        card.cornerRadius,
+      )
+      chain.enable(card.getEffectContext())
+      this.lightBurstProgressChains.set(card.cardId, chain)
+    }
+
+    chain.run()
+    this.refreshTransitionPanelState()
+  }
+
   private refreshTransitionPanelState(): void {
     const active = new Set<string>()
     if (this.selectedCard) {
@@ -1073,6 +1114,10 @@ export class MainScene extends Phaser.Scene {
       const flare = this.cardFlares.get(this.selectedCard.cardId)
       if (flare?.isRunning()) {
         active.add(CARD_FLARE_ID)
+      }
+      const chain = this.lightBurstProgressChains.get(this.selectedCard.cardId)
+      if (chain?.isRunning()) {
+        active.add(LIGHT_BURST_PROGRESS_CHAIN_ID)
       }
     }
     this.effectPanel.setActiveTransitionIds(active)
@@ -1184,6 +1229,11 @@ export class MainScene extends Phaser.Scene {
       flare.destroy()
     }
     this.cardFlares.clear()
+
+    for (const chain of this.lightBurstProgressChains.values()) {
+      chain.destroy()
+    }
+    this.lightBurstProgressChains.clear()
 
     this.selectionIndicator.destroy()
     this.effectPanel.destroy()

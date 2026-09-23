@@ -74,6 +74,13 @@ export interface LightBurstOptions {
    * `front` = over the card (default). `back` = behind artwork.
    */
   position?: LightBurstPosition
+  /**
+   * Initial deterministic seed for this instance's ray-layout stream.
+   * Default `1` (preserves the historical sequence when omitted).
+   * Each `run()` advances the stream before generating rays — same seed +
+   * options + run index → same layout; different seeds → independent sequences.
+   */
+  seed?: number
   /** Phaser blend mode constant (default ADD). */
   blendMode?: number
 }
@@ -98,6 +105,7 @@ export interface ResolvedLightBurstOptions {
   endScale: number
   peakAt: number
   position: LightBurstPosition
+  seed: number
   blendMode: number
   fadeInDuration: number
   holdDuration: number
@@ -141,6 +149,7 @@ export const LIGHT_BURST_DEFAULTS: ResolvedLightBurstOptions = {
   endScale: 1,
   peakAt: 55 / 420,
   position: 'front',
+  seed: 1,
   blendMode: BLEND_ADD,
   fadeInDuration: 55,
   holdDuration: 70,
@@ -397,6 +406,9 @@ export function resolveLightBurstOptions(
     endScale: clamp(raw.endScale ?? LIGHT_BURST_DEFAULTS.endScale, 0.05, 8),
     peakAt,
     position,
+    seed: Math.round(
+      clamp(raw.seed ?? LIGHT_BURST_DEFAULTS.seed, 0, 1_000_000_000),
+    ),
     blendMode: Number.isFinite(raw.blendMode)
       ? Math.floor(raw.blendMode as number)
       : LIGHT_BURST_DEFAULTS.blendMode,

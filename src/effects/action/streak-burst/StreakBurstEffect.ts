@@ -1,9 +1,11 @@
 import Phaser from 'phaser'
 import type { ActionEffect } from '../../../core/ActionEffect'
+import { ActionRunProgress } from '../../../core/ActionRunProgress'
 import type { EffectContext } from '../../../core/EffectContext'
 import { EFFECT_IDS } from '../../../core/EffectKind'
 import {
   buildStreakBurstStreaks,
+  getStreakBurstLifetimeMs,
   resolveStreakBurstOptions,
   sampleStreakBurstFinished,
   sampleStreakBurstStreak,
@@ -40,6 +42,7 @@ export class StreakBurstEffect implements ActionEffect {
   private elapsedMs = 0
   private running = false
   private finishListeners = new Set<StreakBurstFinishCallback>()
+  private readonly runProgress = new ActionRunProgress(() => this)
 
   constructor(options?: StreakBurstOptions) {
     this.inputOptions = { ...options }
@@ -79,12 +82,14 @@ export class StreakBurstEffect implements ActionEffect {
     this.running = true
     this.elapsedMs = 0
     this.drawStreaks()
+    this.runProgress.beginRun()
     return this
   }
 
   /** Stops immediately and hides streaks (does not fire onFinish). */
   public stop(): this {
     this.running = false
+    this.runProgress.abort()
     this.elapsedMs = 0
     this.drawStreaks()
     return this
@@ -102,6 +107,13 @@ export class StreakBurstEffect implements ActionEffect {
     }
   }
 
+  public onProgress(
+    progress: number,
+    callback: (effect: ActionEffect) => void,
+  ): () => void {
+    return this.runProgress.onProgress(progress, callback)
+  }
+
   public update(_time: number, delta: number): void {
     if (!this.options || !this.graphics) {
       return
@@ -112,18 +124,22 @@ export class StreakBurstEffect implements ActionEffect {
     }
 
     this.elapsedMs += Math.max(delta, 0)
+    const duration = getStreakBurstLifetimeMs(this.options, this.streaks)
+    this.runProgress.notify(this.elapsedMs / duration)
     this.drawStreaks()
 
     if (sampleStreakBurstFinished(this.elapsedMs, this.options, this.streaks)) {
       this.running = false
       this.elapsedMs = 0
       this.drawStreaks()
+      this.runProgress.complete()
       this.emitFinish()
     }
   }
 
   public disable(): void {
     this.running = false
+    this.runProgress.abort()
     this.clearVisuals()
     this.elapsedMs = 0
     this.streaks = []
@@ -136,6 +152,7 @@ export class StreakBurstEffect implements ActionEffect {
 
   public destroy(): void {
     this.finishListeners.clear()
+    this.runProgress.clear()
     this.disable()
   }
 

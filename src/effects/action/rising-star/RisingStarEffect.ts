@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import type { ActionEffect } from '../../../core/ActionEffect'
+import { ActionRunProgress } from '../../../core/ActionRunProgress'
 import type { EffectContext } from '../../../core/EffectContext'
 import { EFFECT_IDS } from '../../../core/EffectKind'
 import {
@@ -41,6 +42,7 @@ export class RisingStarEffect implements ActionEffect {
   private elapsedMs = 0
   private running = false
   private finishListeners = new Set<RisingStarFinishCallback>()
+  private readonly runProgress = new ActionRunProgress(() => this)
 
   constructor(options?: RisingStarOptions) {
     this.inputOptions = { ...options }
@@ -80,12 +82,14 @@ export class RisingStarEffect implements ActionEffect {
     this.running = true
     this.elapsedMs = 0
     this.drawStars()
+    this.runProgress.beginRun()
     return this
   }
 
   /** Stops immediately and hides stars (does not fire onFinish). */
   public stop(): this {
     this.running = false
+    this.runProgress.abort()
     this.elapsedMs = 0
     this.drawStars()
     return this
@@ -103,6 +107,13 @@ export class RisingStarEffect implements ActionEffect {
     }
   }
 
+  public onProgress(
+    progress: number,
+    callback: (effect: ActionEffect) => void,
+  ): () => void {
+    return this.runProgress.onProgress(progress, callback)
+  }
+
   public update(_time: number, delta: number): void {
     if (!this.options || !this.graphics) {
       return
@@ -113,11 +124,14 @@ export class RisingStarEffect implements ActionEffect {
     }
 
     this.elapsedMs += delta
+    const duration = Math.max(this.options.duration, 1)
+    this.runProgress.notify(this.elapsedMs / duration)
 
     if (sampleRisingStarFinished(this.elapsedMs, this.options)) {
       this.running = false
       this.elapsedMs = this.options.duration
       this.drawStars()
+      this.runProgress.complete()
       this.emitFinish()
       return
     }
@@ -127,6 +141,7 @@ export class RisingStarEffect implements ActionEffect {
 
   public disable(): void {
     this.running = false
+    this.runProgress.abort()
     this.clearVisuals()
     this.elapsedMs = 0
     this.stars = []
@@ -139,6 +154,7 @@ export class RisingStarEffect implements ActionEffect {
 
   public destroy(): void {
     this.finishListeners.clear()
+    this.runProgress.clear()
     this.disable()
   }
 

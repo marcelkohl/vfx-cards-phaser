@@ -1,8 +1,10 @@
 import Phaser from 'phaser'
 import type { ActionEffect } from '../../../core/ActionEffect'
+import { ActionRunProgress } from '../../../core/ActionRunProgress'
 import type { EffectContext } from '../../../core/EffectContext'
 import { EFFECT_IDS } from '../../../core/EffectKind'
 import {
+  getStarFlareDurationMs,
   resolveStarFlareOptions,
   sampleStarFlareEnvelope,
   starFlareLocalOffset,
@@ -42,6 +44,7 @@ export class StarFlareEffect implements ActionEffect {
   private scale = 0.55
   private running = false
   private finishListeners = new Set<StarFlareFinishCallback>()
+  private readonly runProgress = new ActionRunProgress(() => this)
 
   constructor(options?: StarFlareOptions) {
     this.inputOptions = { ...options }
@@ -85,12 +88,14 @@ export class StarFlareEffect implements ActionEffect {
     this.drawFlare()
 
     this.running = true
+    this.runProgress.beginRun()
     return this
   }
 
   /** Stops immediately and hides the flare (does not fire onFinish). */
   public stop(): this {
     this.running = false
+    this.runProgress.abort()
     this.elapsedMs = 0
     this.strength = 0
     this.scale = this.options?.startScale ?? 0.55
@@ -108,6 +113,13 @@ export class StarFlareEffect implements ActionEffect {
     return () => {
       this.finishListeners.delete(listener)
     }
+  }
+
+  public onProgress(
+    progress: number,
+    callback: (effect: ActionEffect) => void,
+  ): () => void {
+    return this.runProgress.onProgress(progress, callback)
   }
 
   public update(_time: number, delta: number): void {
@@ -132,15 +144,20 @@ export class StarFlareEffect implements ActionEffect {
     if (sample.finished) {
       this.running = false
       this.elapsedMs = 0
+      this.runProgress.complete()
       this.emitFinish()
       return
     }
 
     this.elapsedMs += Math.max(delta, 0)
+    this.runProgress.notify(
+      this.elapsedMs / getStarFlareDurationMs(this.options),
+    )
   }
 
   public disable(): void {
     this.running = false
+    this.runProgress.abort()
     this.clearVisuals()
     this.elapsedMs = 0
     this.strength = 0
@@ -154,6 +171,7 @@ export class StarFlareEffect implements ActionEffect {
 
   public destroy(): void {
     this.finishListeners.clear()
+    this.runProgress.clear()
     this.disable()
   }
 

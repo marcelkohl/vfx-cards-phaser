@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import type { ActionEffect } from '../../../core/ActionEffect'
+import { ActionRunProgress } from '../../../core/ActionRunProgress'
 import type { EffectContext } from '../../../core/EffectContext'
 import { EFFECT_IDS } from '../../../core/EffectKind'
 import {
@@ -43,6 +44,7 @@ export class FragmentBurstEffect implements ActionEffect {
   private elapsedMs = 0
   private running = false
   private finishListeners = new Set<FragmentBurstFinishCallback>()
+  private readonly runProgress = new ActionRunProgress(() => this)
 
   constructor(options?: FragmentBurstOptions) {
     this.inputOptions = { ...options }
@@ -83,12 +85,14 @@ export class FragmentBurstEffect implements ActionEffect {
     this.running = true
     this.elapsedMs = 0
     this.drawFragments()
+    this.runProgress.beginRun()
     return this
   }
 
   /** Stops immediately and hides fragments (does not fire onFinish). */
   public stop(): this {
     this.running = false
+    this.runProgress.abort()
     this.elapsedMs = 0
     this.hideSprites()
     this.drawFragments()
@@ -107,6 +111,13 @@ export class FragmentBurstEffect implements ActionEffect {
     }
   }
 
+  public onProgress(
+    progress: number,
+    callback: (effect: ActionEffect) => void,
+  ): () => void {
+    return this.runProgress.onProgress(progress, callback)
+  }
+
   public update(_time: number, delta: number): void {
     if (!this.options || !this.graphics) {
       return
@@ -117,12 +128,15 @@ export class FragmentBurstEffect implements ActionEffect {
     }
 
     this.elapsedMs += delta
+    const duration = Math.max(this.options.duration, 1)
+    this.runProgress.notify(this.elapsedMs / duration)
 
     if (sampleFragmentBurstFinished(this.elapsedMs, this.options)) {
       this.running = false
       this.elapsedMs = this.options.duration
       this.hideSprites()
       this.drawFragments()
+      this.runProgress.complete()
       this.emitFinish()
       return
     }
@@ -132,6 +146,7 @@ export class FragmentBurstEffect implements ActionEffect {
 
   public disable(): void {
     this.running = false
+    this.runProgress.abort()
     this.clearVisuals()
     this.elapsedMs = 0
     this.fragments = []
@@ -145,6 +160,7 @@ export class FragmentBurstEffect implements ActionEffect {
 
   public destroy(): void {
     this.finishListeners.clear()
+    this.runProgress.clear()
     this.disable()
   }
 

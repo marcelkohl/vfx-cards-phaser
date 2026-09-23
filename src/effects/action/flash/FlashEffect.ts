@@ -1,8 +1,10 @@
 import Phaser from 'phaser'
 import type { ActionEffect } from '../../../core/ActionEffect'
+import { ActionRunProgress } from '../../../core/ActionRunProgress'
 import type { EffectContext } from '../../../core/EffectContext'
 import { EFFECT_IDS } from '../../../core/EffectKind'
 import {
+  getFlashDurationMs,
   resolveFlashOptions,
   sampleFlashEnvelope,
   type FlashOptions,
@@ -32,6 +34,7 @@ export class FlashEffect implements ActionEffect {
   private alpha = 0
   private running = false
   private finishListeners = new Set<FlashFinishCallback>()
+  private readonly runProgress = new ActionRunProgress(() => this)
 
   constructor(options?: FlashOptions) {
     this.inputOptions = { ...options }
@@ -71,12 +74,14 @@ export class FlashEffect implements ActionEffect {
     this.elapsedMs = 0
     this.alpha = 0
     this.drawOverlay()
+    this.runProgress.beginRun()
     return this
   }
 
   /** Stops immediately and hides the overlay (does not fire onFinish). */
   public stop(): this {
     this.running = false
+    this.runProgress.abort()
     this.elapsedMs = 0
     this.alpha = 0
     this.drawOverlay()
@@ -99,6 +104,13 @@ export class FlashEffect implements ActionEffect {
     }
   }
 
+  public onProgress(
+    progress: number,
+    callback: (effect: ActionEffect) => void,
+  ): () => void {
+    return this.runProgress.onProgress(progress, callback)
+  }
+
   public update(_time: number, delta: number): void {
     if (!this.options || !this.overlay) {
       return
@@ -113,12 +125,15 @@ export class FlashEffect implements ActionEffect {
     }
 
     this.elapsedMs += delta
+    const duration = getFlashDurationMs(this.options)
+    this.runProgress.notify(this.elapsedMs / duration)
     const sample = sampleFlashEnvelope(this.elapsedMs, this.options)
 
     if (sample.finished) {
       this.running = false
       this.alpha = 0
       this.drawOverlay()
+      this.runProgress.complete()
       this.emitFinish()
       return
     }
@@ -129,6 +144,7 @@ export class FlashEffect implements ActionEffect {
 
   public disable(): void {
     this.running = false
+    this.runProgress.abort()
     this.clearVisuals()
     this.elapsedMs = 0
     this.alpha = 0
@@ -141,6 +157,7 @@ export class FlashEffect implements ActionEffect {
 
   public destroy(): void {
     this.finishListeners.clear()
+    this.runProgress.clear()
     this.disable()
   }
 

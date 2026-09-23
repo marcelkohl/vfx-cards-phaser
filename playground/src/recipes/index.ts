@@ -48,3 +48,5 @@ export {
   CARD_FLARE_RADIAL_GLOW_DEFAULTS,
   CARD_FLARE_STAR_FLARE_DEFAULTS,
 } from './card-flare/cardFlareOptions'
+
+export { LightBurstProgressChain } from './light-burst-progress-chain/LightBurstProgressChain'

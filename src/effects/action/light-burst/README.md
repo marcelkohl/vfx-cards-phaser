@@ -64,6 +64,21 @@ lightBurst.run()
 | `endScale` | `1` | Escala em t = 1 |
 | `peakAt` | derivado | Pico de opacidade como progresso `0..1` (opcional) |
 | `position` | `'front'` | `'front'` = por cima do target; `'back'` = atrás |
+| `seed` | `1` | Semente inicial do layout determinístico (ver abaixo) |
+
+## Seed
+
+`seed` inicializa a sequência aleatória **determinística** desta instância.
+
+- Mesmo `seed` + mesmas options + mesma ordem de `run()` → mesmos layouts.
+- Seeds diferentes → sequências independentes (útil ao encadear vários Light Bursts).
+- Cada `run()` **avança** o estado interno antes de gerar os raios — layouts sucessivos na mesma instância continuam variando.
+- Omitir `seed` preserva a sequência histórica (equivalente a `seed: 1`).
+
+```ts
+const burstA = new LightBurstEffect({ seed: 1, /* ... */ })
+const burstB = new LightBurstEffect({ seed: 8731, /* ... */ })
+```
 
 ## Scale modes
 

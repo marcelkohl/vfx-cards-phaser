@@ -1,10 +1,12 @@
 import Phaser from 'phaser'
 import type { ActionEffect } from '../../../core/ActionEffect'
+import { ActionRunProgress } from '../../../core/ActionRunProgress'
 import type { EffectContext } from '../../../core/EffectContext'
 import { EFFECT_IDS } from '../../../core/EffectKind'
 import { colorToRgb01 } from '../../../core/effectConfig'
 import { EDGE_GLOW_FRAGMENT_SHADER } from '../../persistent/edge-glow/edgeGlow.frag'
 import {
+  getSoftGlowPulseDurationMs,
   resolveSoftGlowPulseOptions,
   sampleSoftGlowPulseEnvelope,
   type ResolvedSoftGlowPulseOptions,
@@ -51,6 +53,7 @@ export class SoftGlowPulseEffect implements ActionEffect {
   private strength = 0
   private running = false
   private finishListeners = new Set<SoftGlowPulseFinishCallback>()
+  private readonly runProgress = new ActionRunProgress(() => this)
 
   constructor(options?: SoftGlowPulseOptions) {
     this.inputOptions = { ...options }
@@ -93,12 +96,14 @@ export class SoftGlowPulseEffect implements ActionEffect {
     this.applyStrength()
 
     this.running = true
+    this.runProgress.beginRun()
     return this
   }
 
   /** Stops immediately and hides the glow (does not fire onFinish). */
   public stop(): this {
     this.running = false
+    this.runProgress.abort()
     this.elapsedMs = 0
     this.strength = 0
     this.applyStrength()
@@ -115,6 +120,13 @@ export class SoftGlowPulseEffect implements ActionEffect {
     return () => {
       this.finishListeners.delete(listener)
     }
+  }
+
+  public onProgress(
+    progress: number,
+    callback: (effect: ActionEffect) => void,
+  ): () => void {
+    return this.runProgress.onProgress(progress, callback)
   }
 
   public update(_time: number, delta: number): void {
@@ -138,11 +150,15 @@ export class SoftGlowPulseEffect implements ActionEffect {
     if (sample.finished) {
       this.running = false
       this.elapsedMs = 0
+      this.runProgress.complete()
       this.emitFinish()
       return
     }
 
     this.elapsedMs += Math.max(delta, 0)
+    this.runProgress.notify(
+      this.elapsedMs / getSoftGlowPulseDurationMs(this.options),
+    )
   }
 
   private applyStrength(): void {
@@ -159,6 +175,7 @@ export class SoftGlowPulseEffect implements ActionEffect {
 
   public disable(): void {
     this.running = false
+    this.runProgress.abort()
     this.clearVisuals()
     this.elapsedMs = 0
     this.strength = 0
@@ -171,6 +188,7 @@ export class SoftGlowPulseEffect implements ActionEffect {
 
   public destroy(): void {
     this.finishListeners.clear()
+    this.runProgress.clear()
     this.disable()
   }
 

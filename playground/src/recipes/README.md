@@ -11,6 +11,7 @@ They are **not** part of the package public API.
 | [card-flash-burst](card-flash-burst/README.md) | Flash + Light Burst + Bloom Fade |
 | [card-dissolve-reveal](card-dissolve-reveal/README.md) | Flash + Dissolve Reveal + Bloom Fade |
 | [feather](feather/README.md) | Soft Glow Pulse + Fragment Burst + Sparkle Burst + Rising Star |
+| [light-burst-progress-chain](light-burst-progress-chain/README.md) | Validation: two Light Bursts via `onProgress(0.7)` |
 
 ## Philosophy
 

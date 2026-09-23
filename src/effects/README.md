@@ -12,7 +12,11 @@ Import from the package root:
 
 ```ts
 import { EdgeGlowEffect, ShineSweepEffect } from 'phaser-vfx-effects'
+
+effect.onProgress(0.7, () => another.run()) // Action Effects only
 ```
+
+See [../core/ActionEffect.md](../core/ActionEffect.md) for `onProgress` semantics.
 
 | Effect | Kind | Docs |
 |---|---|---|

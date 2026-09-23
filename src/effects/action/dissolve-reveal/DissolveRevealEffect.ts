@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import type { ActionEffect } from '../../../core/ActionEffect'
+import { ActionRunProgress } from '../../../core/ActionRunProgress'
 import type { EffectContext } from '../../../core/EffectContext'
 import { EFFECT_IDS } from '../../../core/EffectKind'
 import { colorToRgb01 } from '../../../core/effectConfig'
@@ -57,6 +58,7 @@ export class DissolveRevealEffect implements ActionEffect {
   private active = false
   private running = false
   private finishListeners = new Set<DissolveRevealFinishCallback>()
+  private readonly runProgress = new ActionRunProgress(() => this)
 
   constructor(options?: DissolveRevealOptions) {
     this.inputOptions = { ...options }
@@ -97,6 +99,7 @@ export class DissolveRevealEffect implements ActionEffect {
     this.progress = 0
     this.active = true
     this.syncVisuals()
+    this.runProgress.beginRun()
     return this
   }
 
@@ -106,6 +109,7 @@ export class DissolveRevealEffect implements ActionEffect {
    */
   public stop(): this {
     this.running = false
+    this.runProgress.abort()
     this.elapsedMs = 0
     this.progress = 1
     this.active = false
@@ -125,6 +129,13 @@ export class DissolveRevealEffect implements ActionEffect {
     }
   }
 
+  public onProgress(
+    progress: number,
+    callback: (effect: ActionEffect) => void,
+  ): () => void {
+    return this.runProgress.onProgress(progress, callback)
+  }
+
   public update(_time: number, delta: number): void {
     if (!this.options || (!this.shader && !this.fallback)) {
       return
@@ -140,6 +151,8 @@ export class DissolveRevealEffect implements ActionEffect {
     }
 
     this.elapsedMs += delta
+    const duration = Math.max(this.options.duration, 1)
+    this.runProgress.notify(this.elapsedMs / duration)
     const sample = sampleDissolveProgress(this.elapsedMs, this.options.duration)
 
     if (sample.finished) {
@@ -147,6 +160,7 @@ export class DissolveRevealEffect implements ActionEffect {
       this.progress = 1
       this.active = false
       this.syncVisuals()
+      this.runProgress.complete()
       this.emitFinish()
       return
     }
@@ -158,6 +172,7 @@ export class DissolveRevealEffect implements ActionEffect {
 
   public disable(): void {
     this.running = false
+    this.runProgress.abort()
     this.clearVisuals()
     this.elapsedMs = 0
     this.progress = 1
@@ -171,6 +186,7 @@ export class DissolveRevealEffect implements ActionEffect {
 
   public destroy(): void {
     this.finishListeners.clear()
+    this.runProgress.clear()
     this.disable()
   }
 

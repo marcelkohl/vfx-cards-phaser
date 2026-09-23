@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import type { ActionEffect } from '../../../core/ActionEffect'
+import { ActionRunProgress } from '../../../core/ActionRunProgress'
 import type { EffectContext } from '../../../core/EffectContext'
 import { EFFECT_IDS } from '../../../core/EffectKind'
 import { colorToRgb01 } from '../../../core/effectConfig'
@@ -56,6 +57,7 @@ export class ExpandingFrameEffect implements ActionEffect {
   private scale = 1
   private running = false
   private finishListeners = new Set<ExpandingFrameFinishCallback>()
+  private readonly runProgress = new ActionRunProgress(() => this)
 
   constructor(options?: ExpandingFrameOptions) {
     this.inputOptions = { ...options }
@@ -99,12 +101,14 @@ export class ExpandingFrameEffect implements ActionEffect {
     this.applyVisualState()
 
     this.running = true
+    this.runProgress.beginRun()
     return this
   }
 
   /** Stops immediately and hides the frame (does not fire onFinish). */
   public stop(): this {
     this.running = false
+    this.runProgress.abort()
     this.elapsedMs = 0
     this.strength = 0
     if (this.options) {
@@ -126,6 +130,13 @@ export class ExpandingFrameEffect implements ActionEffect {
     }
   }
 
+  public onProgress(
+    progress: number,
+    callback: (effect: ActionEffect) => void,
+  ): () => void {
+    return this.runProgress.onProgress(progress, callback)
+  }
+
   public update(_time: number, delta: number): void {
     if (!this.options || (!this.shader && !this.graphics)) {
       return
@@ -141,6 +152,8 @@ export class ExpandingFrameEffect implements ActionEffect {
 
     // Advance first so late fade-out / true-zero samples apply before finish.
     this.elapsedMs += Math.max(delta, 0)
+    const duration = Math.max(this.options.duration, 1)
+    this.runProgress.notify(this.elapsedMs / duration)
     const sample = sampleExpandingFrameEnvelope(this.elapsedMs, this.options)
     this.strength = sample.strength
     this.scale = sample.scale
@@ -149,6 +162,7 @@ export class ExpandingFrameEffect implements ActionEffect {
     if (sample.finished) {
       this.running = false
       this.elapsedMs = 0
+      this.runProgress.complete()
       this.emitFinish()
     }
   }
@@ -170,6 +184,7 @@ export class ExpandingFrameEffect implements ActionEffect {
 
   public disable(): void {
     this.running = false
+    this.runProgress.abort()
     this.clearVisuals()
     this.elapsedMs = 0
     this.strength = 0
@@ -183,6 +198,7 @@ export class ExpandingFrameEffect implements ActionEffect {
 
   public destroy(): void {
     this.finishListeners.clear()
+    this.runProgress.clear()
     this.disable()
   }
 

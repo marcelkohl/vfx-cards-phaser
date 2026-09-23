@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import type { ActionEffect } from '../../../core/ActionEffect'
+import { ActionRunProgress } from '../../../core/ActionRunProgress'
 import type { EffectContext } from '../../../core/EffectContext'
 import { EFFECT_IDS } from '../../../core/EffectKind'
 import {
@@ -39,12 +40,14 @@ export class LightBurstEffect implements ActionEffect {
   private options: ResolvedLightBurstOptions | null = null
   private graphics: Phaser.GameObjects.Graphics | null = null
   private rays: LightBurstRay[] = []
+  /** Per-instance LCG state; initialized from `options.seed` (default 1). */
   private runSeed = 1
   private elapsedMs = 0
   private alpha = 0
   private scale = 1
   private running = false
   private finishListeners = new Set<LightBurstFinishCallback>()
+  private readonly runProgress = new ActionRunProgress(() => this)
 
   constructor(options?: LightBurstOptions) {
     this.inputOptions = { ...options }
@@ -90,12 +93,14 @@ export class LightBurstEffect implements ActionEffect {
     this.drawRays()
 
     this.running = true
+    this.runProgress.beginRun()
     return this
   }
 
   /** Stops immediately and hides rays (does not fire onFinish). */
   public stop(): this {
     this.running = false
+    this.runProgress.abort()
     this.elapsedMs = 0
     this.alpha = 0
     this.scale = this.options?.startScale ?? 1
@@ -113,6 +118,13 @@ export class LightBurstEffect implements ActionEffect {
     return () => {
       this.finishListeners.delete(listener)
     }
+  }
+
+  public onProgress(
+    progress: number,
+    callback: (effect: ActionEffect) => void,
+  ): () => void {
+    return this.runProgress.onProgress(progress, callback)
   }
 
   public update(_time: number, delta: number): void {
@@ -137,15 +149,18 @@ export class LightBurstEffect implements ActionEffect {
     if (sample.finished) {
       this.running = false
       this.elapsedMs = 0
+      this.runProgress.complete()
       this.emitFinish()
       return
     }
 
     this.elapsedMs += Math.max(delta, 0)
+    this.runProgress.notify(this.elapsedMs / Math.max(this.options.duration, 1))
   }
 
   public disable(): void {
     this.running = false
+    this.runProgress.abort()
     this.clearVisuals()
     this.elapsedMs = 0
     this.alpha = 0
@@ -160,6 +175,7 @@ export class LightBurstEffect implements ActionEffect {
 
   public destroy(): void {
     this.finishListeners.clear()
+    this.runProgress.clear()
     this.disable()
   }
 
@@ -172,6 +188,9 @@ export class LightBurstEffect implements ActionEffect {
   private rebuild(context: EffectContext): void {
     this.clearVisuals()
     this.options = resolveLightBurstOptions(this.inputOptions)
+    // Reset the deterministic stream to the configured seed (default 1).
+    // Each subsequent run() advances this value before generating rays.
+    this.runSeed = this.options.seed
     this.running = false
     this.elapsedMs = 0
     this.alpha = 0

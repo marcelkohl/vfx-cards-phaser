@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import type { ActionEffect } from '../../../core/ActionEffect'
+import { ActionRunProgress } from '../../../core/ActionRunProgress'
 import type { EffectContext } from '../../../core/EffectContext'
 import { EFFECT_IDS } from '../../../core/EffectKind'
 import { colorToRgb01 } from '../../../core/effectConfig'
@@ -62,6 +63,7 @@ export class RadialGlowEffect implements ActionEffect {
   private scale = 0.7
   private running = false
   private finishListeners = new Set<RadialGlowFinishCallback>()
+  private readonly runProgress = new ActionRunProgress(() => this)
 
   constructor(options?: RadialGlowOptions) {
     this.inputOptions = { ...options }
@@ -105,12 +107,14 @@ export class RadialGlowEffect implements ActionEffect {
     this.applyVisual()
 
     this.running = true
+    this.runProgress.beginRun()
     return this
   }
 
   /** Stops immediately and hides the glow (does not fire onFinish). */
   public stop(): this {
     this.running = false
+    this.runProgress.abort()
     this.elapsedMs = 0
     this.strength = 0
     this.scale = this.options?.startScale ?? 0.7
@@ -130,6 +134,13 @@ export class RadialGlowEffect implements ActionEffect {
     }
   }
 
+  public onProgress(
+    progress: number,
+    callback: (effect: ActionEffect) => void,
+  ): () => void {
+    return this.runProgress.onProgress(progress, callback)
+  }
+
   public update(_time: number, delta: number): void {
     if (!this.options || (!this.shader && !this.graphics)) {
       return
@@ -146,6 +157,8 @@ export class RadialGlowEffect implements ActionEffect {
     // Advance first so large deltas sample the post-delta envelope (including
     // late fade-out / true zero) instead of replaying a stale high-opacity frame.
     this.elapsedMs += Math.max(delta, 0)
+    const duration = Math.max(this.options.duration, 1)
+    this.runProgress.notify(this.elapsedMs / duration)
     const sample = sampleRadialGlowEnvelope(this.elapsedMs, this.options)
     this.strength = sample.strength
     this.scale = sample.scale
@@ -156,12 +169,14 @@ export class RadialGlowEffect implements ActionEffect {
       // ring before natural completion hides/resets.
       this.running = false
       this.elapsedMs = 0
+      this.runProgress.complete()
       this.emitFinish()
     }
   }
 
   public disable(): void {
     this.running = false
+    this.runProgress.abort()
     this.clearVisuals()
     this.elapsedMs = 0
     this.strength = 0
@@ -175,6 +190,7 @@ export class RadialGlowEffect implements ActionEffect {
 
   public destroy(): void {
     this.finishListeners.clear()
+    this.runProgress.clear()
     this.disable()
   }
 
