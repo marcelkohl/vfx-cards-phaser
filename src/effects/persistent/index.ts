@@ -16,3 +16,9 @@ export type {
   AmbientSparklesSpawnRegion,
 } from './ambient-sparkles/ambientSparklesOptions'
 export { AMBIENT_SPARKLES_DEFAULTS } from './ambient-sparkles/ambientSparklesOptions'
+export { PulsingFrameEffect } from './pulsing-frame/PulsingFrameEffect'
+export type {
+  PulsingFrameOptions,
+  PulsingFramePosition,
+} from './pulsing-frame/pulsingFrameOptions'
+export { PULSING_FRAME_DEFAULTS } from './pulsing-frame/pulsingFrameOptions'

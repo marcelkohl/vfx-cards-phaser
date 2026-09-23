@@ -26,6 +26,7 @@ See [../core/ActionEffect.md](../core/ActionEffect.md) for `onProgress` semantic
 | Rim Line Double | persistent | [persistent/rim-line-double/README.md](./persistent/rim-line-double/README.md) |
 | Edge Glow | persistent | [persistent/edge-glow/README.md](./persistent/edge-glow/README.md) |
 | Ambient Sparkles | persistent | [persistent/ambient-sparkles/README.md](./persistent/ambient-sparkles/README.md) |
+| Pulsing Frame | persistent | [persistent/pulsing-frame/README.md](./persistent/pulsing-frame/README.md) |
 | Flash | action | [action/flash/README.md](./action/flash/README.md) |
 | Light Burst | action | [action/light-burst/README.md](./action/light-burst/README.md) |
 | Bloom Fade | action | [action/bloom-fade/README.md](./action/bloom-fade/README.md) |

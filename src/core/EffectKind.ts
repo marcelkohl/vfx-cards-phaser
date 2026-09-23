@@ -18,6 +18,7 @@ export const EFFECT_IDS = {
   rimLineDouble: 'rim-line-double',
   edgeGlow: 'edge-glow',
   ambientSparkles: 'ambient-sparkles',
+  pulsingFrame: 'pulsing-frame',
   shineSweep: 'shine-sweep',
   flash: 'flash',
   lightBurst: 'light-burst',

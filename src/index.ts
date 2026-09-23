@@ -39,6 +39,8 @@ export {
   EdgeGlowEffect,
   EDGE_GLOW_DEFAULTS,
   HighlightEffect,
+  PulsingFrameEffect,
+  PULSING_FRAME_DEFAULTS,
 } from './effects/persistent/index'
 export type {
   AmbientSparklesOptions,
@@ -49,6 +51,8 @@ export type {
   CardRimLineShaderEffectOptions,
   EdgeGlowOptions,
   HighlightEffectOptions,
+  PulsingFrameOptions,
+  PulsingFramePosition,
 } from './effects/persistent/index'
 
 export {
@@ -129,6 +133,7 @@ import {
   CardRimLineShaderEffect,
   EdgeGlowEffect,
   HighlightEffect,
+  PulsingFrameEffect,
 } from './effects/persistent/index'
 import type {
   AmbientSparklesOptions,
@@ -137,6 +142,7 @@ import type {
   CardRimLineShaderEffectOptions,
   EdgeGlowOptions,
   HighlightEffectOptions,
+  PulsingFrameOptions,
 } from './effects/persistent/index'
 import {
   BloomFadeEffect,
@@ -234,6 +240,16 @@ export function createDefaultEffectRegistry(): EffectRegistry {
     kind: 'persistent',
     create: (options?: EffectCreateOptions) =>
       new AmbientSparklesEffect(options as AmbientSparklesOptions | undefined),
+  })
+
+  registry.register({
+    id: 'pulsing-frame',
+    name: 'Pulsing Frame',
+    description:
+      'Contorno luminoso arredondado que pulsa continuamente.',
+    kind: 'persistent',
+    create: (options?: EffectCreateOptions) =>
+      new PulsingFrameEffect(options as PulsingFrameOptions | undefined),
   })
 
   registry.register({
