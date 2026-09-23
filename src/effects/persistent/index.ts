@@ -9,3 +9,10 @@ export type { RimLineDoubleOptions as CardRimLineDoubleEffectOptions } from './r
 export { EdgeGlowEffect } from './edge-glow/EdgeGlowEffect'
 export type { EdgeGlowOptions } from './edge-glow/edgeGlowOptions'
 export { EDGE_GLOW_DEFAULTS } from './edge-glow/edgeGlowOptions'
+export { AmbientSparklesEffect } from './ambient-sparkles/AmbientSparklesEffect'
+export type {
+  AmbientSparklesOptions,
+  AmbientSparklesPosition,
+  AmbientSparklesSpawnRegion,
+} from './ambient-sparkles/ambientSparklesOptions'
+export { AMBIENT_SPARKLES_DEFAULTS } from './ambient-sparkles/ambientSparklesOptions'

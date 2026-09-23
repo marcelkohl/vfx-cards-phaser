@@ -31,6 +31,8 @@ export type { TransitionFinishCallback, TransitionStep } from './transitions/ind
 
 
 export {
+  AmbientSparklesEffect,
+  AMBIENT_SPARKLES_DEFAULTS,
   CardRimLineDoubleEffect,
   CardRimLineEffect,
   CardRimLineShaderEffect,
@@ -39,6 +41,9 @@ export {
   HighlightEffect,
 } from './effects/persistent/index'
 export type {
+  AmbientSparklesOptions,
+  AmbientSparklesPosition,
+  AmbientSparklesSpawnRegion,
   CardRimLineDoubleEffectOptions,
   CardRimLineEffectOptions,
   CardRimLineShaderEffectOptions,
@@ -118,6 +123,7 @@ export type {
 import { EffectRegistry } from './core/index'
 import type { EffectCreateOptions } from './core/index'
 import {
+  AmbientSparklesEffect,
   CardRimLineDoubleEffect,
   CardRimLineEffect,
   CardRimLineShaderEffect,
@@ -125,6 +131,7 @@ import {
   HighlightEffect,
 } from './effects/persistent/index'
 import type {
+  AmbientSparklesOptions,
   CardRimLineDoubleEffectOptions,
   CardRimLineEffectOptions,
   CardRimLineShaderEffectOptions,
@@ -217,6 +224,16 @@ export function createDefaultEffectRegistry(): EffectRegistry {
     kind: 'persistent',
     create: (options?: EffectCreateOptions) =>
       new EdgeGlowEffect(options as EdgeGlowOptions | undefined),
+  })
+
+  registry.register({
+    id: 'ambient-sparkles',
+    name: 'Ambient Sparkles',
+    description:
+      'Estrelinhas mágicas esparsas e estacionárias em loop contínuo.',
+    kind: 'persistent',
+    create: (options?: EffectCreateOptions) =>
+      new AmbientSparklesEffect(options as AmbientSparklesOptions | undefined),
   })
 
   registry.register({

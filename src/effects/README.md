@@ -21,6 +21,7 @@ import { EdgeGlowEffect, ShineSweepEffect } from 'phaser-vfx-effects'
 | Card Rim Line Shader | persistent | [persistent/rim-line/SHADER.md](./persistent/rim-line/SHADER.md) |
 | Rim Line Double | persistent | [persistent/rim-line-double/README.md](./persistent/rim-line-double/README.md) |
 | Edge Glow | persistent | [persistent/edge-glow/README.md](./persistent/edge-glow/README.md) |
+| Ambient Sparkles | persistent | [persistent/ambient-sparkles/README.md](./persistent/ambient-sparkles/README.md) |
 | Flash | action | [action/flash/README.md](./action/flash/README.md) |
 | Light Burst | action | [action/light-burst/README.md](./action/light-burst/README.md) |
 | Bloom Fade | action | [action/bloom-fade/README.md](./action/bloom-fade/README.md) |

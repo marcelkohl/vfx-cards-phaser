@@ -17,6 +17,7 @@ export const EFFECT_IDS = {
   cardRimLineShader: 'card-rim-line-shader',
   rimLineDouble: 'rim-line-double',
   edgeGlow: 'edge-glow',
+  ambientSparkles: 'ambient-sparkles',
   shineSweep: 'shine-sweep',
   flash: 'flash',
   lightBurst: 'light-burst',
