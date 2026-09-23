@@ -50,3 +50,5 @@ export {
 } from './card-flare/cardFlareOptions'
 
 export { LightBurstProgressChain } from './light-burst-progress-chain/LightBurstProgressChain'
+
+export { CardStarLoopTransition } from './card-star-loop/CardStarLoopTransition'
