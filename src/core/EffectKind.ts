@@ -33,6 +33,7 @@ export const EFFECT_IDS = {
   starFlare: 'star-flare',
   radialGlow: 'radial-glow',
   streakBurst: 'streak-burst',
+  brushLine: 'brush-line',
 } as const
 
 export type EffectId =

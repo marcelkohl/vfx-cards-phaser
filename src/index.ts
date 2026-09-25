@@ -85,6 +85,8 @@ export {
   RADIAL_GLOW_DEFAULTS,
   StreakBurstEffect,
   STREAK_BURST_DEFAULTS,
+  BrushLineEffect,
+  BRUSH_LINE_DEFAULTS,
 } from './effects/action/index'
 export type {
   BloomFadeOptions,
@@ -123,6 +125,8 @@ export type {
   StreakBurstOptions,
   StreakBurstPosition,
   StreakBurstSpawnRegion,
+  BrushLineOptions,
+  BrushLinePosition,
 } from './effects/action/index'
 
 import { EffectRegistry } from './core/index'
@@ -160,6 +164,7 @@ import {
   StarFlareEffect,
   RadialGlowEffect,
   StreakBurstEffect,
+  BrushLineEffect,
 } from './effects/action/index'
 import type {
   BloomFadeOptions,
@@ -176,6 +181,7 @@ import type {
   StarFlareOptions,
   RadialGlowOptions,
   StreakBurstOptions,
+  BrushLineOptions,
 } from './effects/action/index'
 
 export function createDefaultEffectRegistry(): EffectRegistry {
@@ -394,6 +400,16 @@ export function createDefaultEffectRegistry(): EffectRegistry {
     kind: 'action',
     create: (options?: EffectCreateOptions) =>
       new StreakBurstEffect(options as StreakBurstOptions | undefined),
+  })
+
+  registry.register({
+    id: 'brush-line',
+    name: 'Brush Line',
+    description:
+      'Frente luminosa com trilhas verticais (Action Effect: run / onFinish).',
+    kind: 'action',
+    create: (options?: EffectCreateOptions) =>
+      new BrushLineEffect(options as BrushLineOptions | undefined),
   })
 
   return registry

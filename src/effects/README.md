@@ -40,6 +40,7 @@ See [../core/ActionEffect.md](../core/ActionEffect.md) for `onProgress` semantic
 | Star Flare | action | [action/star-flare/README.md](./action/star-flare/README.md) |
 | Radial Glow | action | [action/radial-glow/README.md](./action/radial-glow/README.md) |
 | Streak Burst | action | [action/streak-burst/README.md](./action/streak-burst/README.md) |
+| Brush Line | action | [action/brush-line/README.md](./action/brush-line/README.md) |
 | Shine Sweep | action | [action/shine-sweep/README.md](./action/shine-sweep/README.md) |
 
 Orchestration lives in [`../transitions/`](../transitions/). Contracts live in [`../core/`](../core/).

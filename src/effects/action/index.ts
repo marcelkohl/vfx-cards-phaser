@@ -99,3 +99,10 @@ export type {
   StreakBurstSpawnRegion,
 } from './streak-burst/streakBurstOptions'
 export { STREAK_BURST_DEFAULTS } from './streak-burst/streakBurstOptions'
+
+export { BrushLineEffect } from './brush-line/BrushLineEffect'
+export type {
+  BrushLineOptions,
+  BrushLinePosition,
+} from './brush-line/brushLineOptions'
+export { BRUSH_LINE_DEFAULTS } from './brush-line/brushLineOptions'
