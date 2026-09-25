@@ -52,3 +52,5 @@ export {
 export { LightBurstProgressChain } from './light-burst-progress-chain/LightBurstProgressChain'
 
 export { CardStarLoopTransition } from './card-star-loop/CardStarLoopTransition'
+
+export { CardSunLightLoopTransition } from './card-sunlight-loop/CardSunLightLoopTransition'

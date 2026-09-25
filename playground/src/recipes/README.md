@@ -14,6 +14,7 @@ They are **not** part of the package public API.
 | [card-flare](card-flare/README.md) | Converging Frames + Star Flare + Light Burst + Radial Glow |
 | [card-flash](card-flash/README.md) | Expanding Frame + Radial Glow + Light Burst + Streak Burst |
 | [card-star-loop](card-star-loop/README.md) | Pulsing Frame + Ambient Sparkles + Light Burst × 3 crossfade |
+| [card-sunlight-loop](card-sunlight-loop/README.md) | Pulsing Frame + Sparkles + Light Burst × 3 + Radial Glow × 2 |
 | [light-burst-progress-chain](light-burst-progress-chain/README.md) | Validation: three Light Bursts via `onProgress(0.45)` |
 
 ## Philosophy

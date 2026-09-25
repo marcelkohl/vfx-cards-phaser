@@ -11,6 +11,7 @@ import {
   CardFlashTransition,
   CardFlareTransition,
   CardStarLoopTransition,
+  CardSunLightLoopTransition,
   FeatherTransition,
   LightBurstProgressChain,
 } from '../recipes'
@@ -25,6 +26,7 @@ const CARD_DISSOLVE_REVEAL_ID = 'card-dissolve-reveal'
 const FEATHER_ID = 'feather'
 const CARD_FLARE_ID = 'card-flare'
 const CARD_STAR_LOOP_ID = 'card-star-loop'
+const CARD_SUNLIGHT_LOOP_ID = 'card-sunlight-loop'
 const LIGHT_BURST_PROGRESS_CHAIN_ID = 'light-burst-progress-chain'
 
 /**
@@ -836,6 +838,10 @@ export class MainScene extends Phaser.Scene {
     LightBurstProgressChain
   >()
   private readonly cardStarLoops = new Map<string, CardStarLoopTransition>()
+  private readonly cardSunLightLoops = new Map<
+    string,
+    CardSunLightLoopTransition
+  >()
 
   constructor() {
     super('MainScene')
@@ -879,6 +885,11 @@ export class MainScene extends Phaser.Scene {
         {
           id: CARD_STAR_LOOP_ID,
           name: 'Card Star Loop',
+          badge: 'TRANSITION',
+        },
+        {
+          id: CARD_SUNLIGHT_LOOP_ID,
+          name: 'Card SunLight Loop',
           badge: 'TRANSITION',
         },
         {
@@ -951,6 +962,10 @@ export class MainScene extends Phaser.Scene {
       loop.update(time, delta)
     }
 
+    for (const loop of this.cardSunLightLoops.values()) {
+      loop.update(time, delta)
+    }
+
     this.refreshTransitionPanelState()
     this.selectionIndicator.update()
   }
@@ -1017,6 +1032,11 @@ export class MainScene extends Phaser.Scene {
 
     if (transitionId === CARD_STAR_LOOP_ID) {
       this.handleCardStarLoopSelected()
+      return
+    }
+
+    if (transitionId === CARD_SUNLIGHT_LOOP_ID) {
+      this.handleCardSunLightLoopSelected()
       return
     }
 
@@ -1151,6 +1171,27 @@ export class MainScene extends Phaser.Scene {
     this.refreshTransitionPanelState()
   }
 
+  private handleCardSunLightLoopSelected(): void {
+    const card = this.selectedCard
+    if (!card) {
+      return
+    }
+
+    let loop = this.cardSunLightLoops.get(card.cardId)
+    if (!loop) {
+      loop = new CardSunLightLoopTransition(
+        card.cardWidth,
+        card.cardHeight,
+        card.cornerRadius,
+      )
+      loop.enable(card.getEffectContext())
+      this.cardSunLightLoops.set(card.cardId, loop)
+    }
+
+    loop.run()
+    this.refreshTransitionPanelState()
+  }
+
   private handleLightBurstProgressChainSelected(): void {
     const card = this.selectedCard
     if (!card) {
@@ -1202,6 +1243,10 @@ export class MainScene extends Phaser.Scene {
       const loop = this.cardStarLoops.get(this.selectedCard.cardId)
       if (loop?.isRunning()) {
         active.add(CARD_STAR_LOOP_ID)
+      }
+      const sun = this.cardSunLightLoops.get(this.selectedCard.cardId)
+      if (sun?.isRunning()) {
+        active.add(CARD_SUNLIGHT_LOOP_ID)
       }
     }
     this.effectPanel.setActiveTransitionIds(active)
@@ -1323,6 +1368,11 @@ export class MainScene extends Phaser.Scene {
       loop.destroy()
     }
     this.cardStarLoops.clear()
+
+    for (const loop of this.cardSunLightLoops.values()) {
+      loop.destroy()
+    }
+    this.cardSunLightLoops.clear()
 
     this.selectionIndicator.destroy()
     this.effectPanel.destroy()
