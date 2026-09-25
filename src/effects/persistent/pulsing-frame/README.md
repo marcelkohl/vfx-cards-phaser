@@ -1,8 +1,8 @@
 # Pulsing Frame
 
 Persistent Effect — a stationary luminous rounded-rect **contour** that calmly
-breathes between a subtle low state and a brighter peak, with soft light
-falling **inward** from the frame.
+breathes between a subtle low state and a brighter peak, with soft light on the
+configured side(s) of the frame (`inside` / `outside` / `both`).
 
 ```ts
 import {
@@ -49,8 +49,8 @@ Pulsing Frame:
 
 - stays put (no scale / motion);
 - emphasizes a **uniform** contour (no intentional corner hotspots);
-- soft energy falls **inward** (not a neon exterior bloom);
-- does **not** fill the card center;
+- soft energy on a configurable side of the contour (`glowDirection`);
+- does **not** fill the card center as a wash;
 - loops while enabled (no `run()` / `onFinish()`).
 
 ## Pulse model
@@ -68,18 +68,21 @@ LOW ──smooth rise──► HIGH ──smooth fall──► LOW ──► …
 | `intensity` / `opacity` | `1.15` / `1` | Global multipliers |
 
 Envelope uses smoothstep. Cycle length = rise + fall (~2s). No randomness.
-Both the bright core and the inward glow are multiplied by the pulse envelope.
+Both the bright core and the enabled glow region(s) are multiplied by the pulse envelope.
 
-## Frame + inward glow
+## Frame + glow
 
 | Option | Default | Role |
 |---|---:|---|
 | `frameWidth` | `2.4` | Bright core thickness (px) |
-| `glowWidth` | `26` | Inward illumination distance (px) |
-| `glowIntensity` | `0.95` | Inward glow vs core |
+| `glowWidth` | `26` | Soft reach (near-edge heavy; dissolves into background) |
+| `glowIntensity` | `0.95` | Glow vs core |
+| `glowDirection` | `'inside'` | `inside` / `outside` / `both` |
 
-The core reads as the contour; the glow is secondary energy **inside** the frame.
-Exterior surroundings stay comparatively clean (tiny core AA only).
+Default remains **inside**. Use `outside` for an exterior-only halo, or `both`
+for a continuous border aura (Card Light Loop). One shared contour core —
+modes never stack two frames. Glow falloff is nonlinear so broad `glowWidth`
+does not read as a flat padded rectangle.
 
 ## Layering
 
@@ -94,7 +97,7 @@ Exterior surroundings stay comparatively clean (tiny core AA only).
 
 ## Rendering
 
-- WebGL: local SDF fragment shader — core on `|sd|`, glow only where `sd < 0`.
-- Canvas fallback: contour stroke + inset strokes for inward glow; pulse via `setAlpha`.
+- WebGL: local SDF fragment shader — core on `|sd|`; soft glow gated by `glowDirection`.
+- Canvas fallback: contour stroke + inset and/or outset glow strokes; pulse via `setAlpha`.
 
 No textures. No shared frame/glow infrastructure.

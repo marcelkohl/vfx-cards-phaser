@@ -53,6 +53,7 @@ export type {
   HighlightEffectOptions,
   PulsingFrameOptions,
   PulsingFramePosition,
+  PulsingFrameGlowDirection,
 } from './effects/persistent/index'
 
 export {

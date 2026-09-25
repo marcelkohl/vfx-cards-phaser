@@ -20,5 +20,6 @@ export { PulsingFrameEffect } from './pulsing-frame/PulsingFrameEffect'
 export type {
   PulsingFrameOptions,
   PulsingFramePosition,
+  PulsingFrameGlowDirection,
 } from './pulsing-frame/pulsingFrameOptions'
 export { PULSING_FRAME_DEFAULTS } from './pulsing-frame/pulsingFrameOptions'

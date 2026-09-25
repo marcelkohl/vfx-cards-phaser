@@ -14,6 +14,7 @@ import {
 export type {
   PulsingFrameOptions,
   PulsingFramePosition,
+  PulsingFrameGlowDirection,
 } from './pulsingFrameOptions'
 export { PULSING_FRAME_DEFAULTS } from './pulsingFrameOptions'
 
@@ -153,17 +154,24 @@ export class PulsingFrameEffect implements PersistentEffect {
       frameWidth,
       glowWidth,
       glowIntensity,
+      glowDirection,
       blendMode,
       position,
     } = this.options
 
-    // Glow falls inward — only a thin AA margin is needed outside the card.
-    const margin = Math.ceil(frameWidth + 2)
+    const needsOuter =
+      glowDirection === 'outside' || glowDirection === 'both'
+    // Extra padding so the soft outer tail dissolves before the quad edge.
+    const margin = Math.ceil(
+      needsOuter ? glowWidth + frameWidth + 6 : frameWidth + 2,
+    )
     const quadWidth = Math.ceil(width + margin * 2)
     const quadHeight = Math.ceil(height + margin * 2)
     const rgb = colorToRgb01(color)
     const instanceId = ++shaderInstanceCount
     const effect = this
+    const glowDirectionCode =
+      glowDirection === 'outside' ? 1 : glowDirection === 'both' ? 2 : 0
 
     this.shader = context.scene.add.shader(
       {
@@ -189,6 +197,7 @@ export class PulsingFrameEffect implements PersistentEffect {
           setUniform('uFrameHalf', Math.max(frameWidth * 0.5, 0.35))
           setUniform('uGlowWidth', Math.max(glowWidth, 0.001))
           setUniform('uGlowIntensity', glowIntensity)
+          setUniform('uGlowDirection', glowDirectionCode)
           setUniform('uOpacity', 1)
           setUniform('uPulse', pulse)
         },
@@ -211,7 +220,7 @@ export class PulsingFrameEffect implements PersistentEffect {
   }
 
   /**
-   * Canvas / non-WebGL: bright contour + inset strokes for inward glow.
+   * Canvas / non-WebGL: bright contour + glow strokes on the configured side(s).
    * Absolute alpha is driven by `setAlpha` from the pulse envelope.
    */
   private buildGraphicsFallback(context: EffectContext): void {
@@ -227,6 +236,7 @@ export class PulsingFrameEffect implements PersistentEffect {
       frameWidth,
       glowWidth,
       glowIntensity,
+      glowDirection,
       blendMode,
       position,
     } = this.options
@@ -235,29 +245,53 @@ export class PulsingFrameEffect implements PersistentEffect {
     this.graphics.setName(`effect:${this.id}:fallback`)
     this.graphics.setBlendMode(blendMode)
 
-    // Inward glow: strokes along inset contours so soft light stays inside.
+    const drawInside = glowDirection === 'inside' || glowDirection === 'both'
+    const drawOutside = glowDirection === 'outside' || glowDirection === 'both'
+
     if (glowWidth > 0.5 && glowIntensity > 0.01) {
-      const glowLayers = 7
+      // More layers with nonlinear alpha — strong near contour, faint far out.
+      const glowLayers = 10
       for (let i = 1; i <= glowLayers; i += 1) {
         const t = i / glowLayers
-        const strokeW = Math.max(1.2, (glowWidth / glowLayers) * 1.7)
-        // Keep the stroke's outer half inside the frame edge.
-        const inset = Math.max(glowWidth * t, strokeW * 0.5)
-        if (inset * 2 >= width - 2 || inset * 2 >= height - 2) {
-          continue
-        }
-        const alpha = glowIntensity * Math.pow(1 - t, 1.15) * 0.42
-        if (alpha < 0.012) {
-          continue
-        }
-        this.graphics.lineStyle(strokeW, color, alpha)
-        this.graphics.strokeRoundedRect(
-          -width / 2 + inset,
-          -height / 2 + inset,
-          width - inset * 2,
-          height - inset * 2,
-          Math.max(0, cornerRadius - inset),
+        // Near layers thicker relative to distance; far layers thinner.
+        const strokeW = Math.max(
+          0.9,
+          (glowWidth / glowLayers) * (1.9 - t * 0.9),
         )
+        // Match shader intent: exp near-edge + soft mid + very faint tail.
+        const alpha =
+          glowIntensity *
+          (Math.exp(-5.2 * t) + 0.22 * Math.exp(-1.9 * t) + 0.08 * Math.exp(-0.9 * t)) *
+          0.38
+        if (alpha < 0.008) {
+          continue
+        }
+
+        if (drawInside) {
+          const inset = Math.max(glowWidth * t, strokeW * 0.45)
+          if (inset * 2 < width - 2 && inset * 2 < height - 2) {
+            this.graphics.lineStyle(strokeW, color, alpha)
+            this.graphics.strokeRoundedRect(
+              -width / 2 + inset,
+              -height / 2 + inset,
+              width - inset * 2,
+              height - inset * 2,
+              Math.max(0, cornerRadius - inset),
+            )
+          }
+        }
+
+        if (drawOutside) {
+          const expand = Math.max(glowWidth * t, strokeW * 0.45)
+          this.graphics.lineStyle(strokeW, color, alpha * 0.92)
+          this.graphics.strokeRoundedRect(
+            -width / 2 - expand,
+            -height / 2 - expand,
+            width + expand * 2,
+            height + expand * 2,
+            Math.max(0, cornerRadius + expand * 0.35),
+          )
+        }
       }
     }
 

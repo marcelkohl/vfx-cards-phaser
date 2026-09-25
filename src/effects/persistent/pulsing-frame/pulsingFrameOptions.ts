@@ -7,6 +7,14 @@ import {
 
 export type PulsingFramePosition = 'back' | 'front'
 
+/**
+ * Soft glow direction relative to the rounded-rect contour.
+ * - `inside` — illuminate into the framed area (default)
+ * - `outside` — broad exterior halo only
+ * - `both` — soft energy on both sides of one shared core
+ */
+export type PulsingFrameGlowDirection = 'inside' | 'outside' | 'both'
+
 export interface PulsingFrameOptions {
   /** Target frame width in local pixels. */
   width?: number
@@ -32,13 +40,20 @@ export interface PulsingFrameOptions {
   maxOpacity?: number
   /** Bright core stroke thickness in pixels. Default 2.4. */
   frameWidth?: number
-  /**
-   * Inward soft-illumination distance in pixels (from contour toward center).
-   * Default 26. Exterior glow is not produced.
-   */
+/**
+ * Soft-illumination distance in pixels from the contour.
+ * Direction is controlled by `glowDirection`. Default 26.
+ * Intensity is concentrated near the edge with a faint dissolving tail —
+ * not a flat band across the full width.
+ */
   glowWidth?: number
-  /** Inward glow strength relative to the core (0..2). Default 0.95. */
+  /** Soft glow strength relative to the core (0..2). Default 0.95. */
   glowIntensity?: number
+  /**
+   * Soft glow direction relative to the contour.
+   * Default `inside` — preserves prior Pulsing Frame / Card Star Loop look.
+   */
+  glowDirection?: PulsingFrameGlowDirection
   /** Time to rise from low → high (ms). Default 900. */
   fadeInDuration?: number
   /** Time to fall from high → low (ms). Default 1100. */
@@ -64,6 +79,7 @@ export interface ResolvedPulsingFrameOptions {
   frameWidth: number
   glowWidth: number
   glowIntensity: number
+  glowDirection: PulsingFrameGlowDirection
   fadeInDuration: number
   fadeOutDuration: number
   position: PulsingFramePosition
@@ -84,6 +100,7 @@ export const PULSING_FRAME_DEFAULTS: ResolvedPulsingFrameOptions = {
   frameWidth: 2.4,
   glowWidth: 26,
   glowIntensity: 0.95,
+  glowDirection: 'inside',
   fadeInDuration: 900,
   fadeOutDuration: 1100,
   position: 'front',
@@ -123,6 +140,15 @@ export function samplePulsingFrameStrength(
   const lo = options.minOpacity
   const hi = Math.max(options.maxOpacity, lo)
   return lo + (hi - lo) * u
+}
+
+function resolveGlowDirection(
+  raw: PulsingFrameOptions,
+): PulsingFrameGlowDirection {
+  if (raw.glowDirection === 'outside' || raw.glowDirection === 'both') {
+    return raw.glowDirection
+  }
+  return 'inside'
 }
 
 export function resolvePulsingFrameOptions(
@@ -167,13 +193,14 @@ export function resolvePulsingFrameOptions(
     glowWidth: clamp(
       raw.glowWidth ?? PULSING_FRAME_DEFAULTS.glowWidth,
       0,
-      64,
+      128,
     ),
     glowIntensity: clamp(
       raw.glowIntensity ?? PULSING_FRAME_DEFAULTS.glowIntensity,
       0,
       2,
     ),
+    glowDirection: resolveGlowDirection(raw),
     fadeInDuration: clamp(
       raw.fadeInDuration ?? PULSING_FRAME_DEFAULTS.fadeInDuration,
       40,

@@ -190,6 +190,8 @@ export class CardStarLoopTransition {
       frameWidth: 2.5,
       glowWidth: 28,
       glowIntensity: 1.05,
+      // Explicit: preserve validated inward-only Star Loop look.
+      glowDirection: 'inside',
       fadeInDuration: 900,
       fadeOutDuration: 1100,
       position: 'front',
