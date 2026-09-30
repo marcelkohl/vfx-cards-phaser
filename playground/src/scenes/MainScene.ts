@@ -6,6 +6,7 @@ import {
   isActionEffect,
 } from 'phaser-vfx-effects'
 import {
+  CardCubeUpTransition,
   CardDissolveRevealTransition,
   CardFlashBurstTransition,
   CardFlashTransition,
@@ -22,6 +23,7 @@ const CARD_GAP = 36
 const SCREEN_PADDING = 32
 const CARD_FLASH_BURST_ID = 'card-flash-burst'
 const CARD_FLASH_ID = 'card-flash'
+const CARD_CUBE_UP_ID = 'card-cube-up'
 const CARD_DISSOLVE_REVEAL_ID = 'card-dissolve-reveal'
 const FEATHER_ID = 'feather'
 const CARD_FLARE_ID = 'card-flare'
@@ -977,6 +979,7 @@ export class MainScene extends Phaser.Scene {
   private readonly effectRegistry = createDefaultEffectRegistry()
   private readonly cardFlashBursts = new Map<string, CardFlashBurstTransition>()
   private readonly cardFlashes = new Map<string, CardFlashTransition>()
+  private readonly cardCubeUps = new Map<string, CardCubeUpTransition>()
   private readonly cardDissolveReveals = new Map<
     string,
     CardDissolveRevealTransition
@@ -1015,6 +1018,11 @@ export class MainScene extends Phaser.Scene {
         {
           id: CARD_FLASH_ID,
           name: 'Card Flash',
+          badge: 'TRANSITION',
+        },
+        {
+          id: CARD_CUBE_UP_ID,
+          name: 'Card Cube Up',
           badge: 'TRANSITION',
         },
         {
@@ -1092,6 +1100,10 @@ export class MainScene extends Phaser.Scene {
       flash.update(time, delta)
     }
 
+    for (const cubeUp of this.cardCubeUps.values()) {
+      cubeUp.update(time, delta)
+    }
+
     for (const reveal of this.cardDissolveReveals.values()) {
       reveal.update(time, delta)
     }
@@ -1165,6 +1177,11 @@ export class MainScene extends Phaser.Scene {
       return
     }
 
+    if (transitionId === CARD_CUBE_UP_ID) {
+      this.handleCardCubeUpSelected()
+      return
+    }
+
     if (transitionId === CARD_DISSOLVE_REVEAL_ID) {
       this.handleCardDissolveRevealSelected()
       return
@@ -1234,6 +1251,27 @@ export class MainScene extends Phaser.Scene {
     }
 
     flash.run()
+    this.refreshTransitionPanelState()
+  }
+
+  private handleCardCubeUpSelected(): void {
+    const card = this.selectedCard
+    if (!card) {
+      return
+    }
+
+    let cubeUp = this.cardCubeUps.get(card.cardId)
+    if (!cubeUp) {
+      cubeUp = new CardCubeUpTransition({
+        width: card.cardWidth,
+        height: card.cardHeight,
+        cornerRadius: card.cornerRadius,
+      })
+      cubeUp.enable(card.getEffectContext())
+      this.cardCubeUps.set(card.cardId, cubeUp)
+    }
+
+    cubeUp.run()
     this.refreshTransitionPanelState()
   }
 
@@ -1374,6 +1412,10 @@ export class MainScene extends Phaser.Scene {
       if (flash?.isRunning()) {
         active.add(CARD_FLASH_ID)
       }
+      const cubeUp = this.cardCubeUps.get(this.selectedCard.cardId)
+      if (cubeUp?.isRunning()) {
+        active.add(CARD_CUBE_UP_ID)
+      }
       const reveal = this.cardDissolveReveals.get(this.selectedCard.cardId)
       if (reveal?.isRunning()) {
         active.add(CARD_DISSOLVE_REVEAL_ID)
@@ -1493,6 +1535,11 @@ export class MainScene extends Phaser.Scene {
       flash.destroy()
     }
     this.cardFlashes.clear()
+
+    for (const cubeUp of this.cardCubeUps.values()) {
+      cubeUp.destroy()
+    }
+    this.cardCubeUps.clear()
 
     for (const reveal of this.cardDissolveReveals.values()) {
       reveal.destroy()

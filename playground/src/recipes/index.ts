@@ -5,6 +5,16 @@ export {
   CARD_FLASH_BURST_DEFAULTS,
 } from './card-flash-burst/cardFlashBurstOptions'
 
+export { CardCubeUpTransition } from './card-cube-up/CardCubeUpTransition'
+export type { CardCubeUpOptions } from './card-cube-up/cardCubeUpOptions'
+export {
+  CARD_CUBE_UP_BLOOM_DEFAULTS,
+  CARD_CUBE_UP_BLOCKS_DEFAULTS,
+  CARD_CUBE_UP_COLUMNS_DEFAULTS,
+  CARD_CUBE_UP_DEFAULTS,
+  CARD_CUBE_UP_FLASH_DEFAULTS,
+} from './card-cube-up/cardCubeUpOptions'
+
 export { CardFlashTransition } from './card-flash/CardFlashTransition'
 export type { CardFlashOptions } from './card-flash/cardFlashOptions'
 export {
