@@ -35,6 +35,7 @@ export const EFFECT_IDS = {
   streakBurst: 'streak-burst',
   brushLine: 'brush-line',
   risingLightColumns: 'rising-light-columns',
+  risingBlocks: 'rising-blocks',
 } as const
 
 export type EffectId =

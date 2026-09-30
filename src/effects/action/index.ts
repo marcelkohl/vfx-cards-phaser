@@ -113,3 +113,10 @@ export type {
   RisingLightColumnsPosition,
 } from './rising-light-columns/risingLightColumnsOptions'
 export { RISING_LIGHT_COLUMNS_DEFAULTS } from './rising-light-columns/risingLightColumnsOptions'
+
+export { RisingBlocksEffect } from './rising-blocks/RisingBlocksEffect'
+export type {
+  RisingBlocksOptions,
+  RisingBlocksPosition,
+} from './rising-blocks/risingBlocksOptions'
+export { RISING_BLOCKS_DEFAULTS } from './rising-blocks/risingBlocksOptions'

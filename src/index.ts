@@ -89,6 +89,8 @@ export {
   BRUSH_LINE_DEFAULTS,
   RisingLightColumnsEffect,
   RISING_LIGHT_COLUMNS_DEFAULTS,
+  RisingBlocksEffect,
+  RISING_BLOCKS_DEFAULTS,
 } from './effects/action/index'
 export type {
   BloomFadeOptions,
@@ -131,6 +133,8 @@ export type {
   BrushLinePosition,
   RisingLightColumnsOptions,
   RisingLightColumnsPosition,
+  RisingBlocksOptions,
+  RisingBlocksPosition,
 } from './effects/action/index'
 
 import { EffectRegistry } from './core/index'
@@ -170,6 +174,7 @@ import {
   StreakBurstEffect,
   BrushLineEffect,
   RisingLightColumnsEffect,
+  RisingBlocksEffect,
 } from './effects/action/index'
 import type {
   BloomFadeOptions,
@@ -188,6 +193,7 @@ import type {
   StreakBurstOptions,
   BrushLineOptions,
   RisingLightColumnsOptions,
+  RisingBlocksOptions,
 } from './effects/action/index'
 
 export function createDefaultEffectRegistry(): EffectRegistry {
@@ -428,6 +434,16 @@ export function createDefaultEffectRegistry(): EffectRegistry {
       new RisingLightColumnsEffect(
         options as RisingLightColumnsOptions | undefined,
       ),
+  })
+
+  registry.register({
+    id: 'rising-blocks',
+    name: 'Rising Blocks',
+    description:
+      'Fragmentos retangulares luminosos que sobem (Action Effect: run / onFinish).',
+    kind: 'action',
+    create: (options?: EffectCreateOptions) =>
+      new RisingBlocksEffect(options as RisingBlocksOptions | undefined),
   })
 
   return registry
