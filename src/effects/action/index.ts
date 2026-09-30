@@ -106,3 +106,10 @@ export type {
   BrushLinePosition,
 } from './brush-line/brushLineOptions'
 export { BRUSH_LINE_DEFAULTS } from './brush-line/brushLineOptions'
+
+export { RisingLightColumnsEffect } from './rising-light-columns/RisingLightColumnsEffect'
+export type {
+  RisingLightColumnsOptions,
+  RisingLightColumnsPosition,
+} from './rising-light-columns/risingLightColumnsOptions'
+export { RISING_LIGHT_COLUMNS_DEFAULTS } from './rising-light-columns/risingLightColumnsOptions'

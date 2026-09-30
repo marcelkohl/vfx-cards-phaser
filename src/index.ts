@@ -87,6 +87,8 @@ export {
   STREAK_BURST_DEFAULTS,
   BrushLineEffect,
   BRUSH_LINE_DEFAULTS,
+  RisingLightColumnsEffect,
+  RISING_LIGHT_COLUMNS_DEFAULTS,
 } from './effects/action/index'
 export type {
   BloomFadeOptions,
@@ -127,6 +129,8 @@ export type {
   StreakBurstSpawnRegion,
   BrushLineOptions,
   BrushLinePosition,
+  RisingLightColumnsOptions,
+  RisingLightColumnsPosition,
 } from './effects/action/index'
 
 import { EffectRegistry } from './core/index'
@@ -165,6 +169,7 @@ import {
   RadialGlowEffect,
   StreakBurstEffect,
   BrushLineEffect,
+  RisingLightColumnsEffect,
 } from './effects/action/index'
 import type {
   BloomFadeOptions,
@@ -182,6 +187,7 @@ import type {
   RadialGlowOptions,
   StreakBurstOptions,
   BrushLineOptions,
+  RisingLightColumnsOptions,
 } from './effects/action/index'
 
 export function createDefaultEffectRegistry(): EffectRegistry {
@@ -410,6 +416,18 @@ export function createDefaultEffectRegistry(): EffectRegistry {
     kind: 'action',
     create: (options?: EffectCreateOptions) =>
       new BrushLineEffect(options as BrushLineOptions | undefined),
+  })
+
+  registry.register({
+    id: 'rising-light-columns',
+    name: 'Rising Light Columns',
+    description:
+      'Traços verticais estreitos que sobem (Action Effect: run / onFinish).',
+    kind: 'action',
+    create: (options?: EffectCreateOptions) =>
+      new RisingLightColumnsEffect(
+        options as RisingLightColumnsOptions | undefined,
+      ),
   })
 
   return registry

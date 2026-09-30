@@ -34,6 +34,7 @@ export const EFFECT_IDS = {
   radialGlow: 'radial-glow',
   streakBurst: 'streak-burst',
   brushLine: 'brush-line',
+  risingLightColumns: 'rising-light-columns',
 } as const
 
 export type EffectId =
