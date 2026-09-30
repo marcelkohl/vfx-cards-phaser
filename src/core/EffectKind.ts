@@ -36,6 +36,7 @@ export const EFFECT_IDS = {
   brushLine: 'brush-line',
   risingLightColumns: 'rising-light-columns',
   risingBlocks: 'rising-blocks',
+  risingBubbles: 'rising-bubbles',
 } as const
 
 export type EffectId =

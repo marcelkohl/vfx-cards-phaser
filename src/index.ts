@@ -91,6 +91,8 @@ export {
   RISING_LIGHT_COLUMNS_DEFAULTS,
   RisingBlocksEffect,
   RISING_BLOCKS_DEFAULTS,
+  RisingBubblesEffect,
+  RISING_BUBBLES_DEFAULTS,
 } from './effects/action/index'
 export type {
   BloomFadeOptions,
@@ -135,6 +137,9 @@ export type {
   RisingLightColumnsPosition,
   RisingBlocksOptions,
   RisingBlocksPosition,
+  RisingBubblesOptions,
+  RisingBubblesPosition,
+  RisingBubblesBoundsMode,
 } from './effects/action/index'
 
 import { EffectRegistry } from './core/index'
@@ -175,6 +180,7 @@ import {
   BrushLineEffect,
   RisingLightColumnsEffect,
   RisingBlocksEffect,
+  RisingBubblesEffect,
 } from './effects/action/index'
 import type {
   BloomFadeOptions,
@@ -194,6 +200,7 @@ import type {
   BrushLineOptions,
   RisingLightColumnsOptions,
   RisingBlocksOptions,
+  RisingBubblesOptions,
 } from './effects/action/index'
 
 export function createDefaultEffectRegistry(): EffectRegistry {
@@ -444,6 +451,16 @@ export function createDefaultEffectRegistry(): EffectRegistry {
     kind: 'action',
     create: (options?: EffectCreateOptions) =>
       new RisingBlocksEffect(options as RisingBlocksOptions | undefined),
+  })
+
+  registry.register({
+    id: 'rising-bubbles',
+    name: 'Rising Bubbles',
+    description:
+      'Bolhas de sabão translúcidas que sobem (Action Effect: run / onFinish).',
+    kind: 'action',
+    create: (options?: EffectCreateOptions) =>
+      new RisingBubblesEffect(options as RisingBubblesOptions | undefined),
   })
 
   return registry

@@ -120,3 +120,11 @@ export type {
   RisingBlocksPosition,
 } from './rising-blocks/risingBlocksOptions'
 export { RISING_BLOCKS_DEFAULTS } from './rising-blocks/risingBlocksOptions'
+
+export { RisingBubblesEffect } from './rising-bubbles/RisingBubblesEffect'
+export type {
+  RisingBubblesOptions,
+  RisingBubblesPosition,
+  RisingBubblesBoundsMode,
+} from './rising-bubbles/risingBubblesOptions'
+export { RISING_BUBBLES_DEFAULTS } from './rising-bubbles/risingBubblesOptions'
